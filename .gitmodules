@@ -1,0 +1,6 @@
+[submodule "tarallo-frontend"]
+	path = tarallo-frontend
+	url = https://github.com/WEEE-Open/tarallo-frontend.git
+[submodule "tarallo-backend"]
+	path = tarallo-backend
+	url = https://github.com/WEEE-Open/tarallo-backend.git
