@@ -11,7 +11,7 @@ debconf-set-selections <<< 'mariadb-server-10.0 mysql-server/root_password_again
 
 # Last two packages are needed by PHPUnit
 apt-get update
-apt-get install -y apache2 php libapache2-mod-php php-mcrypt php-mysql mariadb-server-10.0 npm composer php-dom php-mbstring
+apt-get install -y apache2 php libapache2-mod-php php-mcrypt php-mysql mariadb-server-10.0 npm composer unzip php-dom php-mbstring
 ln -s /usr/bin/nodejs /usr/bin/node
 
 systemctl enable apache2
@@ -55,7 +55,7 @@ EOF
 
 echo "Installing dependencies (composer)..."
 pushd "$DOCUMENT_ROOT/server"
-
+composer install
 popd > /dev/null 2>&1
 
 echo "Installing dependencies (npm)..."
