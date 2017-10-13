@@ -40,7 +40,12 @@ echo "Allowing connections from Adminer (root/root)..."
 mysql -uroot -proot -e "USE mysql; UPDATE user SET plugin='' WHERE User='root'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY 'root' WITH GRANT OPTION; GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'root' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 
 echo "Importing database..."
-mysql -uroot -proot < "$DOCUMENT_ROOT/server/database.sql"
+mysql -uroot -proot -e "CREATE DATABASE tarallo DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+mysql -uroot -proot tarallo < "$DOCUMENT_ROOT/server/database.sql"
+
+echo "Importing test database..."
+mysql -uroot -proot -e "CREATE DATABASE tarallo_test DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+mysql -uroot -proot tarallo_test < "$DOCUMENT_ROOT/server/database.sql"
 
 echo "Importing sample data..."
 mysql -uroot -proot < "/data/sample-data.sql"
@@ -68,4 +73,3 @@ screen -dm bash -c "grunt watch; exec sh"
 popd > /dev/null 2>&1
 
 echo "T.A.R.A.L.L.O. should be up at $URL"
-
