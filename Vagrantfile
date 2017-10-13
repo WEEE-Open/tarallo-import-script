@@ -7,11 +7,11 @@ Vagrant.configure("2") do |config|
 
   config.vm.synced_folder ".", "/vagrant", disabled: true
   config.vm.synced_folder "./data", "/data"
-  config.vm.synced_folder "./tarallo-backend", "/tarallo-backend"
-  config.vm.synced_folder "./tarallo-frontend", "/tarallo-frontend"
+  config.vm.synced_folder "./tarallo-backend", "/var/www/html/server"
+  config.vm.synced_folder "./tarallo-frontend", "/var/www/html/tarallo"
 
   config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
-  config.vm.network "forwarded_port", guest: 3306, host: 3306, host_ip: "127.0.0.1"
+  #config.vm.network "forwarded_port", guest: 3306, host: 3306, host_ip: "127.0.0.1"
 
   config.vm.provider "virtualbox" do |v|
     v.name = "tarallo"

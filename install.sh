@@ -11,7 +11,7 @@ debconf-set-selections <<< 'mariadb-server-10.0 mysql-server/root_password_again
 
 # Last two packages are needed by PHPUnit
 apt-get update
-apt-get install -y apache2 php libapache2-mod-php php-mcrypt php-mysql mariadb-server-10.0 npm composer unzip php-dom php-mbstring
+apt-get install -y apache2 php libapache2-mod-php php-mcrypt php-mysql php-xdebug mariadb-server-10.0 npm composer unzip php-dom php-mbstring
 ln -s /usr/bin/nodejs /usr/bin/node
 
 systemctl enable apache2
@@ -25,16 +25,18 @@ systemctl start mysql
 #mysql -uroot -proot -e "SET PASSWORD = PASSWORD('');"
 
 echo "Doing stuff with Apache..."
-systemctl restart apache2
+cat << 'EOF' > "/etc/php/7.0/mods-available/xdebug.ini"
+xdebug.remote_enable = on
+xdebug.remote_connect_back = on
+xdebug.idekey = "vagrant"
+EOF
 rm "$DOCUMENT_ROOT/index.html"
+systemctl restart apache2
 
 # Always useful to have
 echo "Installing Adminer..."
 wget -O "$DOCUMENT_ROOT/adminer.php" https://github.com/vrana/adminer/releases/download/v4.3.1/adminer-4.3.1-mysql-en.php
 chown www-data:www-data "$DOCUMENT_ROOT/adminer.php"
-
-ln -s /tarallo-backend $DOCUMENT_ROOT/server
-ln -s /tarallo-frontend $DOCUMENT_ROOT/tarallo
 
 echo "Allowing connections from Adminer (root/root)..."
 mysql -uroot -proot -e "USE mysql; UPDATE user SET plugin='' WHERE User='root'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY 'root' WITH GRANT OPTION; GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'root' WITH GRANT OPTION; FLUSH PRIVILEGES;"
