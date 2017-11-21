@@ -2,7 +2,8 @@
 <?php
 $data = file_get_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'database-data.sql');
 $lines = preg_split('/[\n\r]/', $data, -1, PREG_SPLIT_NO_EMPTY);
-$result = 'let features = new Map();'.PHP_EOL;
+//$result = 'let features = new Map();'.PHP_EOL;
+$result .= '// BEGIN GENERATED CODE'.PHP_EOL;
 
 $block = 0;
 $features = [];
@@ -33,18 +34,22 @@ foreach($lines as $line) {
 			$type    = substr($boom[2], 1, 1);
 
 			if($type === '2') {
-				$result .= 'features.set(\''.$feature.'\', new Set({REPLACE'.$id.'}));'.PHP_EOL;
+				$result .= 'Features.list.set(\''.$feature.'\', new Set({REPLACE'.$id.'}));'.PHP_EOL;
 			} else {
-				$result .= 'features.set(\''.$feature.'\', null);'.PHP_EOL;
+				$result .= 'Features.list.set(\''.$feature.'\', null);'.PHP_EOL;
 			}
 
 			$features[$id] = [];
 
 			echo 'Feature: ' . $id . ':' . $feature . ':' . $type . PHP_EOL;
 		} else if($block === 2) {
+			if(count($boom) === 3) {
+				$distance = 5;
+			} else {
+				$distance = 4;
+			}
 			$id      = substr($boom[0], 2);
-
-			$value   = substr($boom[2], 2, strlen( $boom[2] ) - 4);
+			$value = substr( $boom[2], 2, strlen( $boom[2] ) - $distance );
 
 			$features[$id][] = $value;
 
@@ -64,5 +69,6 @@ foreach($features as $id => $values) {
 	$array .= ']';
 	$result = str_replace('{REPLACE'.$id.'}', $array, $result);
 }
+$result .= '// END GENERATED CODE'.PHP_EOL;
 
-file_put_contents('features.js', $result);
+file_put_contents('features.generated.js', $result);
