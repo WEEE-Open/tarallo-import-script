@@ -33,9 +33,9 @@ foreach($lines as $line) {
 			$type    = substr($boom[2], 1, 1);
 
 			if($type === '2') {
-				$result .= 'features.set(\''.$feature.'\', new Set({REPLACE'.$id.'}))'.PHP_EOL;
+				$result .= 'features.set(\''.$feature.'\', new Set({REPLACE'.$id.'}));'.PHP_EOL;
 			} else {
-				$result .= 'features.set(\''.$feature.'\', null)'.PHP_EOL;
+				$result .= 'features.set(\''.$feature.'\', null);'.PHP_EOL;
 			}
 
 			$features[$id] = [];
@@ -43,7 +43,8 @@ foreach($lines as $line) {
 			echo 'Feature: ' . $id . ':' . $feature . ':' . $type . PHP_EOL;
 		} else if($block === 2) {
 			$id      = substr($boom[0], 2);
-			$value   = substr($boom[2], 2, strlen( $boom[1] ) - 3);
+
+			$value   = substr($boom[2], 2, strlen( $boom[2] ) - 4);
 
 			$features[$id][] = $value;
 
