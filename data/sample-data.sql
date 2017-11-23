@@ -12,63 +12,6 @@ INSERT INTO `Codes` (`Prefix`, `Integer`) VALUES
 ('M',	3),
 ('T',	2);
 
-TRUNCATE `Feature`;
-INSERT INTO `Feature` (`FeatureID`, `FeatureName`, `FeatureType`) VALUES
-(1,	'brand',	0),
-(2,	'model',	0),
-(3,	'owner',	0),
-(4,	'sn',	0),
-(5,	'mac',	0),
-(6,	'type',	2),
-(7,	'working',	2),
-(8,	'capacity-byte',	1),
-(9,	'frequency-hz',	1),
-(10,	'diameter-mm',	1),
-(11,	'diagonal-inch',	1),
-(12,	'has-gpu',	2),
-(13,	'color',	2),
-(14,	'motherboard-form-factor',	2),
-(15,	'notes',	0);
-
-TRUNCATE `FeatureValue`;
-INSERT INTO `FeatureValue` (`FeatureID`, `ValueEnum`, `ValueText`) VALUES
-(6,	0,	'location'),
-(6,	1,	'case'),
-(6,	2,	'motherboard'),
-(6,	3,	'cpu'),
-(6,	4,	'gpu'),
-(6,	5,	'ram'),
-(6,	6,	'hdd'),
-(6,	7,	'odd'),
-(6,	8,	'psu'),
-(6,	9,	'audio-card'),
-(6,	10,	'network-card'),
-(6,	11,	'monitor'),
-(6,	12,	'mouse'),
-(6,	13,	'keyboard'),
-(6,	14,	'inventory-sticker-polito'),
-(6,	15,	'inventory-sticker-polito-old'),
-(6,	16,	'inventory-sticker-disat'),
-(6,	17,	'windows-sticker'),
-(7,	0,	'no'),
-(7,	1,	'yes'),
-(7,	2,	'cant-tell'),
-(12,	0,	'no'),
-(12,	1,	'yes'),
-(13,	0,	'black'),
-(13,	1,	'white'),
-(13,	2,	'green'),
-(13,	3,	'yellow'),
-(13,	4,	'red'),
-(13,	5,	'blue'),
-(13,	6,	'grey'),
-(13,	7,	'sip-brown'),
-(14,	0,	'atx'),
-(14,	1,	'miniatx'),
-(14,	2,	'microatx'),
-(14,	3,	'miniitx'),
-(14,	4,	'proprietary');
-
 TRUNCATE `Item`;
 INSERT INTO `Item` (`ItemID`, `Code`, `IsDefault`, `Default`) VALUES
 (1,	'CHERNOBYL',	0,	NULL),

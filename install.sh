@@ -44,10 +44,11 @@ mysql -uroot -proot -e "USE mysql; UPDATE user SET plugin='' WHERE User='root'; 
 echo "Importing database..."
 mysql -uroot -proot -e "CREATE DATABASE tarallo DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
 mysql -uroot -proot tarallo < "$DOCUMENT_ROOT/server/database.sql"
+mysql -uroot -proot tarallo < "$DOCUMENT_ROOT/server/database-data.sql"
 
-echo "Importing test database..."
-mysql -uroot -proot -e "CREATE DATABASE tarallo_test DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-mysql -uroot -proot tarallo_test < "$DOCUMENT_ROOT/server/database.sql"
+#echo "Importing test database..."
+#mysql -uroot -proot -e "CREATE DATABASE tarallo_test DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+#mysql -uroot -proot tarallo_test < "$DOCUMENT_ROOT/server/database.sql"
 
 echo "Importing sample data..."
 mysql -uroot -proot < "/data/sample-data.sql"
