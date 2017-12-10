@@ -2,7 +2,6 @@
 
 set -e
 
-URL="http://localhost:8080/tarallo/"
 DOCUMENT_ROOT="/var/www/html"
 
 export DEBIAN_FRONTEND="noninteractive"
@@ -41,6 +40,12 @@ chown www-data:www-data "$DOCUMENT_ROOT/adminer.php"
 echo "Allowing connections from Adminer (root/root)..."
 mysql -uroot -proot -e "USE mysql; UPDATE user SET plugin='' WHERE User='root'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY 'root' WITH GRANT OPTION; GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'root' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 
+# Comment-out if not needed
+echo "Allowing direct database connections from host to guest..."
+sed -i '/bind-address/s/^#//g' /etc/mysql/mariadb.conf.d/50-server.cnf
+mysql -uroot -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';"
+systemctl restart mysql
+
 echo "Importing database..."
 mysql -uroot -proot -e "CREATE DATABASE tarallo DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
 mysql -uroot -proot tarallo < "$DOCUMENT_ROOT/server/database.sql"
@@ -75,4 +80,4 @@ echo "Running grunt watch inside of screen... (which doesn't work BECAUSE REASON
 screen -dm bash -c "grunt watch; exec sh"
 popd > /dev/null 2>&1
 
-echo "T.A.R.A.L.L.O. should be up at $URL"
+echo "T.A.R.A.L.L.O. should be up and running"
