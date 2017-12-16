@@ -24,6 +24,36 @@ function notice($message, $line) {
 	echo $line.PHP_EOL;
 }
 
+function nuke($line, $expected) {
+	$pieces = explode('|', $line);
+	if(count($pieces) !== $expected) {
+		stop('Expected ' . $expected . ' pieces, found ' . count($pieces), $line);
+	}
+	if(trim($pieces[0]) === '') {
+		notice('Skipping item without code', $line);
+		return null;
+	}
+	return $pieces;
+}
+
+function working(Item $item, $working, $line) {
+	if($working !== '') {
+		switch($working) {
+			case 'Y':
+				$item->addFeature('working', 'yes');
+				break;
+			case 'N':
+				$item->addFeature('working', 'no');
+				break;
+			case 'M':
+				$item->addFeature('working', 'maybe');
+				break;
+			default:
+				stop('Working state ' . $working . ' has no meaningful meaning [sic]', $line);
+		}
+	}
+}
+
 $polito = (new Item('Polito'))->addFeature('type', 'location');
 $chernobyl = (new Item('Chernobyl'))->addFeature('type', 'location');
 $mrf = (new Item('Mirafiori'))->addFeature('type', 'location');
@@ -62,21 +92,21 @@ for($i = 1; $i < 95; $i++) {
 			break;
 	}
 }
-$zonablu->addContent((new Item('D1'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('D2'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('D3'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('D4'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('D5'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('D6'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('D7'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('D8'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('D9'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('EMILIA'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('ROSETTA'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('ROSITA'))->addFeature('type', 'case'));
-$zonablu->addContent((new Item('ROSITA'))->addFeature('type', 'case'));
+$case['D1'] = $zonablu->addContent((new Item('D1'))->addFeature('type', 'case'));
+$case['D2'] = $zonablu->addContent((new Item('D2'))->addFeature('type', 'case'));
+$case['D3'] = $zonablu->addContent((new Item('D3'))->addFeature('type', 'case'));
+$case['D4'] = $zonablu->addContent((new Item('D4'))->addFeature('type', 'case'));
+$case['D5'] = $zonablu->addContent((new Item('D5'))->addFeature('type', 'case'));
+$case['D6'] = $zonablu->addContent((new Item('D6'))->addFeature('type', 'case'));
+$case['D7'] = $zonablu->addContent((new Item('D7'))->addFeature('type', 'case'));
+$case['D8'] = $zonablu->addContent((new Item('D8'))->addFeature('type', 'case'));
+$case['D9'] = $zonablu->addContent((new Item('D9'))->addFeature('type', 'case'));
+$case['EMILIA'] = $zonablu->addContent((new Item('EMILIA'))->addFeature('type', 'case'));
+$case['ROSETTA'] = $zonablu->addContent((new Item('ROSETTA'))->addFeature('type', 'case'));
+$case['ROSITA'] = $zonablu->addContent((new Item('ROSITA'))->addFeature('type', 'case'));
+$case['Gesoo'] = $zonablu->addContent((new Item('Gesoo'))->addFeature('type', 'case'));
 
-function placeinto($item, $parent, $line) {
+function placeinto(Item $item, $parent, $line) {
 	global $case;
 	if(isset($case[trim($parent)])) {
 		/** @noinspection PhpUndefinedMethodInspection */
@@ -149,51 +179,78 @@ $header = fgets($files['monitor']);
 $header = explode('|', $header);
 // Whatever, it's not really needed...
 
+$counter = 0;
 while(($line = fgets($files['monitor'])) !== false) {
-	$pieces = explode('|', $line);
-	if(count($pieces) !== count($header)) {
-		stop('Expected ' . count($header) . ' pieces, found ' . count($pieces), $line);
-	}
-	if(trim($pieces[0]) === '') {
-		notice('Skipping item without code', $line);
+	$pieces = nuke($line, count($header));
+	if($pieces === null) {
 		continue;
 	}
 	$monitor = new Item(trim($pieces[0]));
 	$monitor->addFeature('type', 'monitor');
 	if($pieces[1] !== '' && $pieces[1] !== '-') {
-		$monitor->addFeature('cib', $pieces[1]);
+		$monitor->addFeature('cib', trim($pieces[1]));
 	}
 	if($pieces[2] !== '' && $pieces[2] !== '-') {
 		// TODO: discernere vecchi codici di inventario da "altro" (non serve a nulla memorizzarli, ma se perdiamo il CIB e il nostro codice per qualche ragione almeno c'è un'etichetta univoca sopra...)
-		$monitor->addFeature('other-code', $pieces[2]);
+		$monitor->addFeature('other-code', trim($pieces[2]));
 	}
-	$pieces[3] === '' ?: $monitor->addFeature('brand', $pieces[3]);
-	($pieces[4] === '' || $pieces[4] === '-') ?: $monitor->addFeature('model', $pieces[4]);
-	if($pieces[5] !== '') {
-		switch($pieces[5]) {
-			case 'Y':
-				$monitor->addFeature('working', 'yes');
-				break;
-			case 'N':
-				$monitor->addFeature('working', 'no');
-				break;
-			case 'M':
-				$monitor->addFeature('working', 'maybe');
-				break;
-			default:
-				stop('Working state ' . $pieces[5] . ' has no meaningful meaning [sic]', $line);
-		}
-	}
+	$pieces[3] === '' ?: $monitor->addFeature('brand', trim($pieces[3]));
+	($pieces[4] === '' || $pieces[4] === '-') ?: $monitor->addFeature('model', trim($pieces[4]));
+	working($monitor, $pieces[5], $line);
 	$pieces[6] === '-' ?: $monitor->addFeature('vga-ports-n', 1);
 	$pieces[7] === '-' ?: $monitor->addFeature('dvi-ports-n', 1);
 	$pieces[8] === '-' ?: ($monitor->addFeature('usb-ports-n', 2) && $monitor->addFeature('check', 'wrong-data'));
 	$pieces[9] === '-' ?: $monitor->addFeature('hdmi-ports-n', 1);
-	$pieces[10] === '' ?: $monitor->addFeature('notes', $pieces[10]);
+	$pieces[10] === '' ?: $monitor->addFeature('notes', trim($pieces[10]));
 	placeinto($monitor, $pieces[11], $line);
-	$pieces[13] === '' ?: $monitor->addFeature('owner', $pieces[13]);
+	// TODO: handle "data di carico" (even though they're mostly random)
+	if($pieces[13] === 'AreaIT') {
+		$pieces[13] = 'Area IT';
+	}
+	$pieces[13] === '' ?: $monitor->addFeature('owner', trim($pieces[13]));
+	$counter++;
 }
+$files['monitor'] = $counter;
+
+$header = fgets($files['ram']);
+$header = explode('|', $header);
+$counter = 0;
+while(($line = fgets($files['ram'])) !== false) {
+	$pieces = nuke($line, count($header));
+	if($pieces === null) {
+		continue;
+	}
+	$ram = new Item(trim($pieces[0]));
+	$pieces[1] === '' ?: $ram->addFeature('ram-type', strtolower(trim($pieces[1])));
+	$pieces[2] === '' ?: $ram->addFeature('ram-form-factor', strtolower(trim($pieces[2])));
+	$pieces[3] === '' ?: $ram->addFeature('frequency-hertz', $pieces[3] * 1000000);
+	$pieces[4] === '' ?: $ram->addFeature('size-byte', $pieces[4] * 1048576);
+	if(trim($pieces[5]) !== '') {
+		$pieces[5] = trim($pieces[5]);
+		$subpieces = explode(' ', $pieces[5],2);
+		assert(count($subpieces) > 0);
+		if(count($subpieces) === 1) {
+			if(substr($subpieces[0], 0, 5) === 'VS512') {
+				$ram->addFeature('model', $subpieces[0]);
+			} else {
+				$ram->addFeature('brand', $subpieces[0]);
+			}
+		} else {
+			$ram->addFeature('brand', $subpieces[0]);
+			$ram->addFeature('model', $subpieces[1]);
+		}
+	}
+	$pieces[6] === '' && $pieces[6] === '-' ?: $ram->addFeature('sn', trim($pieces[6]));
+	$pieces[7] === '' ?: $ram->addFeature('notes', trim($pieces[7]));
+	placeinto($ram, $pieces[8], $line);
+	$pieces[10] === '' ?: $ram->addFeature('owner', trim($pieces[10]));
+	$counter++;
+}
+$files['ram'] = $counter;
 
 echo 'THE END'.PHP_EOL;
+echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
+print_r($files);
 
 //$db->modificationDAO()->modifcationBegin(new User('asd', 'asd'));
 //$this->getDb()->itemDAO()->addItems($polito);
