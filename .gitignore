@@ -2,3 +2,6 @@
 build/
 *.log
 *.generated.js
+converter/*.ods
+converter/*.csv
+converter/.~lock.*

@@ -1,0 +1,200 @@
+#!/usr/bin/php
+<?php
+if(!chdir('../tarallo-backend')) {
+	echo 'Cannot change directory'.PHP_EOL;
+};
+/** @noinspection PhpIncludeInspection */
+include 'vendor/autoload.php';
+
+use WEEEOpen\Tarallo\Database\Database;
+use WEEEOpen\Tarallo\Item;
+// That's not the production server, OBVIOUSLY. This is run on testing, then database will be exported and imported again in production.
+$db = new Database('root', 'root', 'mysql:dbname=tarallo;host=127.0.0.1');
+
+function stop($error, $line) {
+	echo $error.PHP_EOL;
+	echo 'Line that caused the error:'.PHP_EOL;
+	echo PHP_EOL.$line.PHP_EOL;
+	exit(1);
+}
+
+function notice($message, $line) {
+	echo $message.PHP_EOL;
+	echo 'Line: ';
+	echo $line.PHP_EOL;
+}
+
+$polito = (new Item('Polito'))->addFeature('type', 'location');
+$chernobyl = (new Item('Chernobyl'))->addFeature('type', 'location');
+$mrf = (new Item('Mirafiori'))->addFeature('type', 'location');
+$armadiol = (new Item('ArmadioL'))->addFeature('type', 'location');
+$armadior = (new Item('ArmadioR'))->addFeature('type', 'location');
+$armadios = (new Item('ArmadioS'))->addFeature('type', 'location');
+$armadiod = (new Item('ArmadioD'))->addFeature('type', 'location');
+$scatolaRAM = (new Item('BrokenRamBox'))->addFeature('type', 'location');
+$tavolo = (new Item('Tavolo'))->addFeature('type', 'location');
+$groot = (new Item('Groot'))->addFeature('type', 'location');
+$rotonda = (new Item('Rotonda'))->addFeature('type', 'location');
+$sottoaltavolo = (new Item('Sotto'))->addFeature('type', 'location');
+$zonablu = (new Item('ZonaBlu'))->addFeature('type', 'location');
+$zonarossa = (new Item('ZonaRossa'))->addFeature('type', 'location');
+$zonaground = (new Item('ZonaGround'))->addFeature('type', 'location');
+
+$polito->addContent($chernobyl)->addContent($mrf);
+$chernobyl->addContent($armadiol)->addContent($armadior)->addContent($armadios)->addContent($armadiod)->addContent($tavolo)->addContent($groot)->addContent($rotonda)->addContent($zonablu)->addContent($zonarossa)->addContent($zonaground);
+$armadior->addContent($scatolaRAM);
+$tavolo->addContent($sottoaltavolo);
+
+// For testing only
+$case = [];
+for($i = 1; $i < 95; $i++) {
+	$code = (string) $i;
+	$case[$code] = (new Item($code))->addFeature('type', 'case');
+	switch($i % 3) {
+		case 0:
+			$zonablu->addContent($case[$code]);
+			break;
+		case 1:
+			$zonarossa->addContent($case[$code]);
+			break;
+		case 2:
+			$zonaground->addContent($case[$code]);
+			break;
+	}
+}
+$zonablu->addContent((new Item('D1'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('D2'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('D3'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('D4'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('D5'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('D6'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('D7'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('D8'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('D9'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('EMILIA'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('ROSETTA'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('ROSITA'))->addFeature('type', 'case'));
+$zonablu->addContent((new Item('ROSITA'))->addFeature('type', 'case'));
+
+function placeinto($item, $parent, $line) {
+	global $case;
+	if(isset($case[trim($parent)])) {
+		/** @noinspection PhpUndefinedMethodInspection */
+		$case[trim($parent)]->addContent($item);
+		return;
+	}
+	$where = preg_replace("/[^a-z]/", "", strtolower($parent));
+	switch($where) {
+		case 'zonablu':
+		case 'zonarossa':
+		case 'zonaground':
+		case 'groot':
+		case 'tavolo':
+		case 'armadiol':
+		case 'armadior':
+		case 'armadios':
+		case 'armadiod':
+			global $$where;
+			/** @noinspection PhpUndefinedMethodInspection */
+			$$where->addContent($item);
+			return;
+		case 'zonamrf':
+		case 'mirafiori':
+			global $mrf;
+			/** @noinspection PhpUndefinedMethodInspection */
+			$mrf->addContent($item);
+			return;
+		case 'perso':
+		case 'persa':
+			global $chernobyl;
+			/** @noinspection PhpUndefinedMethodInspection */
+			$chernobyl->addContent($item);
+			return;
+	}
+	if(strstr($where, 'scatolaramrotte') > -1) {
+		global $scatolaRAM;
+		/** @noinspection PhpUndefinedMethodInspection */
+		$scatolaRAM->addContent($item);
+		return;
+	}
+	if(strstr($where, 'armadiol') > -1) {
+		global $armadiol;
+		/** @noinspection PhpUndefinedMethodInspection */
+		$armadiol->addContent($item);
+		return;
+	}
+	// TODO: handle this correctly
+	if(strstr($where, 'computer') > -1) {
+		global $armadiol;
+		/** @noinspection PhpUndefinedMethodInspection */
+		$armadiol->addContent($item);
+		return;
+	}
+	stop('Unknown location: ' . $parent, $line);
+	return null;
+}
+
+$files = ['monitor', 'ram'];
+$files = array_flip($files);
+foreach($files as $file => $useless) {
+	$handle = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . $file . '.csv', "r");
+	if(!$handle) {
+		echo 'Cannot open ' . $file . '.csv';
+		exit(1);
+	}
+	$files[$file] = $handle;
+}
+
+$header = fgets($files['monitor']);
+$header = explode('|', $header);
+// Whatever, it's not really needed...
+
+while(($line = fgets($files['monitor'])) !== false) {
+	$pieces = explode('|', $line);
+	if(count($pieces) !== count($header)) {
+		stop('Expected ' . count($header) . ' pieces, found ' . count($pieces), $line);
+	}
+	if(trim($pieces[0]) === '') {
+		notice('Skipping item without code', $line);
+		continue;
+	}
+	$monitor = new Item(trim($pieces[0]));
+	$monitor->addFeature('type', 'monitor');
+	if($pieces[1] !== '' && $pieces[1] !== '-') {
+		$monitor->addFeature('cib', $pieces[1]);
+	}
+	if($pieces[2] !== '' && $pieces[2] !== '-') {
+		// TODO: discernere vecchi codici di inventario da "altro" (non serve a nulla memorizzarli, ma se perdiamo il CIB e il nostro codice per qualche ragione almeno c'è un'etichetta univoca sopra...)
+		$monitor->addFeature('other-code', $pieces[2]);
+	}
+	$pieces[3] === '' ?: $monitor->addFeature('brand', $pieces[3]);
+	($pieces[4] === '' || $pieces[4] === '-') ?: $monitor->addFeature('model', $pieces[4]);
+	if($pieces[5] !== '') {
+		switch($pieces[5]) {
+			case 'Y':
+				$monitor->addFeature('working', 'yes');
+				break;
+			case 'N':
+				$monitor->addFeature('working', 'no');
+				break;
+			case 'M':
+				$monitor->addFeature('working', 'maybe');
+				break;
+			default:
+				stop('Working state ' . $pieces[5] . ' has no meaningful meaning [sic]', $line);
+		}
+	}
+	$pieces[6] === '-' ?: $monitor->addFeature('vga-ports-n', 1);
+	$pieces[7] === '-' ?: $monitor->addFeature('dvi-ports-n', 1);
+	$pieces[8] === '-' ?: ($monitor->addFeature('usb-ports-n', 2) && $monitor->addFeature('check', 'wrong-data'));
+	$pieces[9] === '-' ?: $monitor->addFeature('hdmi-ports-n', 1);
+	$pieces[10] === '' ?: $monitor->addFeature('notes', $pieces[10]);
+	placeinto($monitor, $pieces[11], $line);
+	$pieces[13] === '' ?: $monitor->addFeature('owner', $pieces[13]);
+}
+
+echo 'THE END'.PHP_EOL;
+
+//$db->modificationDAO()->modifcationBegin(new User('asd', 'asd'));
+//$this->getDb()->itemDAO()->addItems($polito);
+//$db->modificationDAO()->modificationCommit();
