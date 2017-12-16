@@ -29,11 +29,35 @@ manually inside `tarallo-frontend` (outside guest VM) or `/var/www/html/tarallo-
 ## Building stuff
 
 Run `build.sh` outside Vagrant: it will create a new directory named `build` and place 
-there all the files that need to be deployed. Will also run Composer and Grunt, so 
+there all the files that need to be deployed. It will also run Composer and Grunt, so 
 have them installed.
 
-The only manual step required after that is to edit `server/dp.php`. And create/update 
+The only manual step required after that is to edit `server/db.php`. And create/update/import
 the database, if needed.
+
+## Misc utility scripts
+
+These are PHP scripts which can be run directly or by using `php script-name`.
+
+### Feature list generation
+
+`generate-features` takes `tarallo-backend/database-data.php` from backend,
+converts into some JS code and places it into `features.generated.js`. That code
+should be appended to `tarallo-frontend/js/feratures.js` after being manually reviewed.
+
+### Inserting initial data
+
+`converter/convert` takes some predefined csv files as input, builds an Item tree in memory
+and stores it in the database.
+
+Since csv structure is quite complex and chaotic and full of
+exceptions and, most importantly, depends on our current inventory structure (an ods 
+spreadsheet with 13 distinct pages and hundreds of rows in each) which is not public, this is
+practically useless to anyone. However it should give you an idea on how to use the addContent, 
+addFeature and addItems methods work, to import data directly into the database rather than by
+JSON API or manual input.
+
+Note that this script runs only if current directory is the `convert` directory.
 
 ## License
 
