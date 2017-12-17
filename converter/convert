@@ -225,9 +225,10 @@ while(($line = fgets($files['ram'])) !== false) {
 	$pieces[2] === '' ?: $ram->addFeature('ram-form-factor', strtolower(trim($pieces[2])));
 	$pieces[3] === '' ?: $ram->addFeature('frequency-hertz', $pieces[3] * 1000000);
 	$pieces[4] === '' ?: $ram->addFeature('size-byte', $pieces[4] * 1048576);
-	if(trim($pieces[5]) !== '') {
-		$pieces[5] = trim($pieces[5]);
-		$subpieces = explode(' ', $pieces[5],2);
+	working($ram, $pieces[5], $line);
+	if(trim($pieces[6]) !== '') {
+		$pieces[6] = trim($pieces[6]);
+		$subpieces = explode(' ', $pieces[6],2);
 		assert(count($subpieces) > 0);
 		if(count($subpieces) === 1) {
 			if(substr($subpieces[0], 0, 5) === 'VS512') {
@@ -240,10 +241,14 @@ while(($line = fgets($files['ram'])) !== false) {
 			$ram->addFeature('model', $subpieces[1]);
 		}
 	}
-	$pieces[6] === '' && $pieces[6] === '-' ?: $ram->addFeature('sn', trim($pieces[6]));
-	$pieces[7] === '' ?: $ram->addFeature('notes', trim($pieces[7]));
-	placeinto($ram, $pieces[8], $line);
-	$pieces[10] === '' ?: $ram->addFeature('owner', trim($pieces[10]));
+	$pieces[7] = trim($pieces[7]);
+		$pieces[7] === '' || $pieces[7] === '-' ?: $ram->addFeature('sn', trim($pieces[7]));
+	if(mb_substr($pieces[7], 0, 3) === '...' || mb_substr($pieces[7], 0, 1) === '…') {
+		$ram->addFeature('check', 'missing-data');
+	}
+	$pieces[8] === '' ?: $ram->addFeature('notes', trim($pieces[8]));
+	placeinto($ram, $pieces[9], $line);
+	$pieces[11] === '' ?: $ram->addFeature('owner', trim($pieces[11]));
 	$counter++;
 }
 $files['ram'] = $counter;
@@ -251,6 +256,9 @@ $files['ram'] = $counter;
 echo 'THE END'.PHP_EOL;
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
+
+// Items are JSON encoded by the API, so this is quite legible:
+//echo json_encode($polito, JSON_PRETTY_PRINT);
 
 //$db->modificationDAO()->modifcationBegin(new User('asd', 'asd'));
 //$this->getDb()->itemDAO()->addItems($polito);
