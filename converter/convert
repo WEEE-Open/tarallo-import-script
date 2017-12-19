@@ -8,8 +8,10 @@ include 'vendor/autoload.php';
 
 use WEEEOpen\Tarallo\Database\Database;
 use WEEEOpen\Tarallo\Item;
+define('DBNAME', 'tarallo_import');
 // That's not the production server, OBVIOUSLY. This is run on testing, then database will be exported and imported again in production.
-$db = new Database('root', 'root', 'mysql:dbname=tarallo;host=127.0.0.1');
+$db = new Database('root', 'root', 'mysql:host=127.0.0.1');
+
 
 function stop($error, $line) {
 	echo $error.PHP_EOL;
@@ -224,7 +226,7 @@ while(($line = fgets($files['ram'])) !== false) {
 	$pieces[1] === '' ?: $ram->addFeature('ram-type', strtolower(trim($pieces[1])));
 	$pieces[2] === '' ?: $ram->addFeature('ram-form-factor', strtolower(trim($pieces[2])));
 	$pieces[3] === '' ?: $ram->addFeature('frequency-hertz', $pieces[3] * 1000000);
-	$pieces[4] === '' ?: $ram->addFeature('size-byte', $pieces[4] * 1048576);
+	$pieces[4] === '' ?: $ram->addFeature('capacity-byte', $pieces[4] * 1048576);
 	working($ram, $pieces[5], $line);
 	if(trim($pieces[6]) !== '') {
 		$pieces[6] = trim($pieces[6]);
@@ -253,13 +255,38 @@ while(($line = fgets($files['ram'])) !== false) {
 }
 $files['ram'] = $counter;
 
-echo 'THE END'.PHP_EOL;
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
 
 // Items are JSON encoded by the API, so this is quite legible:
 //echo json_encode($polito, JSON_PRETTY_PRINT);
 
-//$db->modificationDAO()->modifcationBegin(new User('asd', 'asd'));
-//$this->getDb()->itemDAO()->addItems($polito);
+echo 'Connecting to database and doing stuff...'.PHP_EOL;
+$dbr  = new \ReflectionObject($db);
+$method = $dbr->getMethod('getPDO');
+$method->setAccessible(true);
+$pdo = $method->invoke($db);
+/**
+ * @var $pdo \PDO
+ */
+$pdo->exec('DROP DATABASE IF EXISTS ' . DBNAME);
+$pdo->exec('CREATE DATABASE ' . DBNAME . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+$pdo->exec('USE ' . DBNAME);
+$pdo->exec(file_get_contents('database.sql'));
+$pdo->exec(file_get_contents('database-data.sql'));
+$pdo->exec('INSERT INTO `User` (`UserID`, `Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
+(0,	\'IMPORT\',	\'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\',	1507496724,	1)');
+
+echo 'Importing Item tree...'.PHP_EOL;
+$db->modificationDAO()->modifcationBegin(new WEEEOpen\Tarallo\User('IMPORT', 'asd'));
+try {
+	$db->itemDAO()->addItems($polito);
+	$pdo->commit();
+} catch(Exception $e) {
+	$db->modificationDAO()->modificationRollback();
+	throw $e;
+}
+// Doesn't work but import succeeds
 //$db->modificationDAO()->modificationCommit();
+
+echo 'THE END'.PHP_EOL;
