@@ -126,6 +126,7 @@ function placeinto(Item $item, $parent, $line) {
 		case 'armadior':
 		case 'armadios':
 		case 'armadiod':
+		case 'chernobyl':
 			global $$where;
 			/** @noinspection PhpUndefinedMethodInspection */
 			$$where->addContent($item);
@@ -166,7 +167,7 @@ function placeinto(Item $item, $parent, $line) {
 	return null;
 }
 
-$files = ['monitor', 'ram'];
+$files = ['monitor', 'ram', 'hdd'];
 $files = array_flip($files);
 foreach($files as $file => $useless) {
 	$handle = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . $file . '.csv', "r");
@@ -255,11 +256,132 @@ while(($line = fgets($files['ram'])) !== false) {
 }
 $files['ram'] = $counter;
 
+
+$header = fgets($files['hdd']);
+$header = explode('|', $header);
+$counter = 0;
+while(($line = fgets($files['hdd'])) !== false) {
+	$pieces = nuke($line, count($header));
+	if($pieces === null) {
+		continue;
+	}
+	$hdd = new Item(trim($pieces[0]));
+
+	if(substr($pieces[11], 0, 5) === 'Perso') {
+		placeinto($hdd, 'Chernobyl', $line);
+		$hdd->addFeature('check', 'wrong-location');
+	} else {
+		placeinto($hdd, $pieces[11], $line);
+	}
+
+	switch(trim($pieces[1])) {
+		case 'IDE':
+			$hdd->addFeature('ide-ports-n', 1);
+			break;
+		case 'SATA':
+			$hdd->addFeature('sata-ports-n', 1);
+			break;
+		case 'MiniIDE':
+			$hdd->addFeature('mini-ide-ports-n', 1);
+			break;
+		case 'SCSI DB68':
+			$hdd->addFeature('scsi-db68-ports-n', 1);
+			break;
+		case 'SCSI':
+			$hdd->addFeature('scsi-sca2-ports-n', 1);
+			array_key_exists('check', $hdd->getFeatures()) ?: $hdd->addFeature('check', 'wrong-data');
+			break;
+		default:
+			stop('Unknown connector type', $line);
+	}
+	if(trim($pieces[2]) !== '') {
+		$pieces[2] = trim($pieces[2]);
+		$subpieces = explode(' ', $pieces[2],2);
+		assert(count($subpieces) > 0);
+
+		if($subpieces[0] === 'WesternDigital') {
+			$subpieces[0] = 'Western Digital';
+		}
+
+		if(count($subpieces) === 1) {
+			$hdd->addFeature('brand', $subpieces[0]);
+		} else {
+			$hdd->addFeature('brand', $subpieces[0]);
+			$hdd->addFeature('model', $subpieces[1]);
+		}
+	}
+
+	if($pieces[3] === '') {
+		array_key_exists('check', $hdd->getFeatures()) ?: $hdd->addFeature('check', 'missing-data');
+	} else {
+		$thing = trim($pieces[3]);
+		if(strpos($thing, ',') > -1) {
+			$thing = str_replace(',', '.', $thing);
+			$size = (int) ((double) $thing * 1000000000.0);
+			echo $size . PHP_EOL;
+		} else {
+			$size = trim($pieces[3]) * 1000000000;
+		}
+		$hdd->addFeature('capacity-decibyte', $size);
+	}
+
+	$pieces[4] === '' ?: $hdd->addFeature('spin-rate-rpm', (int) $pieces[4]);
+
+	if($pieces[5] === '') {
+		array_key_exists('check', $hdd->getFeatures()) ?: $hdd->addFeature('check', 'missing-data');
+	} else {
+		$hdd->addFeature('sn', $pieces[5]);
+	}
+
+	working($hdd, $pieces[6], $line);
+
+	if($pieces[7] !== '' && $pieces[7] !== 'no') {
+		$hdd->addFeature('data-erased', 'yes');
+	}
+
+	if($pieces[8] !== '') {
+		switch(trim($pieces[8])) {
+			case 'ok':
+				$hdd->addFeature('surface-scan', 'pass');
+				break;
+			case 'no':
+				$hdd->addFeature('surface-scan', 'fail');
+				break;
+			default:
+				stop('Unknown badblocks value', $line);
+		}
+	}
+
+	if($pieces[9] !== '') {
+		switch(trim($pieces[9])) {
+			case 'ok':
+				$hdd->addFeature('smart-data', 'ok');
+				break;
+			case 'no':
+				$hdd->addFeature('smart-data', 'fail');
+				break;
+			case 'ni':
+				$hdd->addFeature('smart-data', 'old');
+				break;
+			default:
+				stop('Unknown S.M.A.R.T. status value', $line);
+		}
+	}
+
+	$pieces[10] === '' ?: $hdd->addFeature('notes', trim($pieces[10]));
+	$pieces[13] === '' ?: $hdd->addFeature('owner', trim($pieces[13]));
+	$counter++;
+}
+$files['hdd'] = $counter;
+
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
 
 // Items are JSON encoded by the API, so this is quite legible:
 //echo json_encode($polito, JSON_PRETTY_PRINT);
+
+// Stop here to see what has been parsed without importing into database
+exit(0);
 
 echo 'Connecting to database and doing stuff...'.PHP_EOL;
 $dbr  = new \ReflectionObject($db);
@@ -286,7 +408,7 @@ try {
 	$db->modificationDAO()->modificationRollback();
 	throw $e;
 }
-// Doesn't work but import succeeds
+// Doesn't work but import succeeds anyway
 //$db->modificationDAO()->modificationCommit();
 
 echo 'THE END'.PHP_EOL;

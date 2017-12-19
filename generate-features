@@ -3,7 +3,7 @@
 $data = file_get_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'database-data.sql');
 $lines = preg_split('/[\n\r]/', $data, -1, PREG_SPLIT_NO_EMPTY);
 //$result = 'let features = new Map();'.PHP_EOL;
-$result .= '// BEGIN GENERATED CODE'.PHP_EOL;
+$result = '// BEGIN GENERATED CODE'.PHP_EOL;
 
 $block = 0;
 $features = [];
@@ -28,7 +28,10 @@ foreach($lines as $line) {
 		if(count($boom) < 3) {
 			continue;
 		}
-		if ($block === 1) {
+		if(substr(trim($boom[0]), 0, 2) == '--') {
+			continue;
+		}
+		if($block === 1) {
 			$id      = substr($boom[0], 2);
 			$feature = substr($boom[1], 2, strlen( $boom[1] ) - 3);
 			$type    = substr($boom[2], 1, 1);
@@ -72,3 +75,5 @@ foreach($features as $id => $values) {
 $result .= '// END GENERATED CODE'.PHP_EOL;
 
 file_put_contents('features.generated.js', $result);
+
+echo 'Done. Run "cat features.generated.js >> tarallo-frontend/js/features.js" and manually merge the file'.PHP_EOL;
