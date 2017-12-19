@@ -1,7 +1,7 @@
 .vagrant/
 build/
 *.log
-*.generated.js
+*.generated.js*
 converter/*.ods
 converter/*.csv
 converter/.~lock.*

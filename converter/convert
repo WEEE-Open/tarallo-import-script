@@ -267,6 +267,10 @@ while(($line = fgets($files['hdd'])) !== false) {
 	}
 	$hdd = new Item(trim($pieces[0]));
 
+	if(trim($pieces[0]) === 'HDD2') {
+		$hdd->addFeature('check', 'wrong-data');
+	}
+
 	if(substr($pieces[11], 0, 5) === 'Perso') {
 		placeinto($hdd, 'Chernobyl', $line);
 		$hdd->addFeature('check', 'wrong-location');
@@ -379,6 +383,7 @@ print_r($files);
 
 // Items are JSON encoded by the API, so this is quite legible:
 //echo json_encode($polito, JSON_PRETTY_PRINT);
+file_put_contents('../database.generated.json', json_encode($polito, JSON_PRETTY_PRINT));
 
 // Stop here to see what has been parsed without importing into database
 exit(0);
