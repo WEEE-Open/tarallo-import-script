@@ -240,6 +240,7 @@ while(($line = fgets($files['ram'])) !== false) {
 		continue;
 	}
 	$ram = new Item(trim($pieces[0]));
+	$ram->addFeature('type', 'ram');
 	$pieces[1] === '' ?: $ram->addFeature('ram-type', strtolower(trim($pieces[1])));
 	$pieces[2] === '' ?: $ram->addFeature('ram-form-factor', strtolower(trim($pieces[2])));
 	$pieces[3] === '' ?: $ram->addFeature('frequency-hertz', $pieces[3] * 1000000);
@@ -282,6 +283,7 @@ while(($line = fgets($files['hdd'])) !== false) {
 		continue;
 	}
 	$hdd = new Item(trim($pieces[0]));
+	$hdd->addFeature('type', 'hdd');
 
 	if(trim($pieces[0]) === 'HDD2') {
 		$hdd->addFeature('check', 'wrong-data');
@@ -404,6 +406,7 @@ while(($line = fgets($files['odd'])) !== false) {
 		continue;
 	}
 	$odd = new Item(trim($pieces[0]));
+	$odd->addFeature('type', 'odd');
 
 	switch(trim($pieces[1])) {
 		case 'IDE':
