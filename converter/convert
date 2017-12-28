@@ -71,9 +71,10 @@ $sottoaltavolo = (new Item('Sotto'))->addFeature('type', 'location');
 $zonablu = (new Item('ZonaBlu'))->addFeature('type', 'location');
 $zonarossa = (new Item('ZonaRossa'))->addFeature('type', 'location');
 $zonaground = (new Item('ZonaGround'))->addFeature('type', 'location');
+$davanzale = (new Item('Windowsill'))->addFeature('type', 'location');
 
 $polito->addContent($chernobyl)->addContent($mrf);
-$chernobyl->addContent($armadiol)->addContent($armadior)->addContent($armadios)->addContent($armadiod)->addContent($tavolo)->addContent($groot)->addContent($rotonda)->addContent($zonablu)->addContent($zonarossa)->addContent($zonaground);
+$chernobyl->addContent($armadiol)->addContent($armadior)->addContent($armadios)->addContent($armadiod)->addContent($tavolo)->addContent($groot)->addContent($rotonda)->addContent($zonablu)->addContent($zonarossa)->addContent($zonaground)->addContent($davanzale);
 $armadior->addContent($scatolaRAM);
 $tavolo->addContent($sottoaltavolo);
 
@@ -122,6 +123,7 @@ function placeinto(Item $item, $parent, $line) {
 		case 'zonaground':
 		case 'groot':
 		case 'tavolo':
+		case 'davanzale':
 		case 'armadiol':
 		case 'armadior':
 		case 'armadios':
@@ -139,6 +141,7 @@ function placeinto(Item $item, $parent, $line) {
 			return;
 		case 'perso':
 		case 'persa':
+		case 'duplicato':
 			global $chernobyl;
 			/** @noinspection PhpUndefinedMethodInspection */
 			$chernobyl->addContent($item);
@@ -182,11 +185,26 @@ function colorify(Item $item, $color, $line) {
 		case 'blu':
 			$item->addFeature('color', 'blue');
 			return;
+		case 'ingiallito':
+			$item->addFeature('color', 'yellowed');
+			return;
+		case 'trasparente scuro':
+			$item->addFeature('color', 'transparent-dark');
+			return;
+		case 'azzurro':
+			$item->addFeature('color', 'lightblue');
+			return;
+		case 'rosa':
+			$item->addFeature('color', 'pink');
+			return;
+		case 'grigio scuro':
+			$item->addFeature('color', 'darkgrey');
+			return;
 	}
 	stop('Unknown color: ' . $color, $line);
 }
 
-$files = ['monitor', 'ram', 'hdd', 'odd'];
+$files = ['monitor', 'ram', 'hdd', 'odd', 'input'];
 $files = array_flip($files);
 foreach($files as $file => $useless) {
 	$handle = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . $file . '.csv', "r");
@@ -236,9 +254,6 @@ $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['ram'])) !== false) {
 	$pieces = nuke($line, count($header));
-	if($pieces === null) {
-		continue;
-	}
 	$ram = new Item(trim($pieces[0]));
 	$ram->addFeature('type', 'ram');
 	$pieces[1] === '' ?: $ram->addFeature('ram-type', strtolower(trim($pieces[1])));
@@ -279,9 +294,6 @@ $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['hdd'])) !== false) {
 	$pieces = nuke($line, count($header));
-	if($pieces === null) {
-		continue;
-	}
 	$hdd = new Item(trim($pieces[0]));
 	$hdd->addFeature('type', 'hdd');
 
@@ -402,11 +414,7 @@ $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['odd'])) !== false) {
 	$pieces = nuke($line, count($header));
-	if($pieces === null) {
-		continue;
-	}
 	$odd = new Item(trim($pieces[0]));
-	$odd->addFeature('type', 'odd');
 
 	switch(trim($pieces[1])) {
 		case 'IDE':
@@ -451,6 +459,77 @@ while(($line = fgets($files['odd'])) !== false) {
 	$counter++;
 }
 $files['odd'] = $counter;
+
+$header = fgets($files['input']);
+$header = explode('|', $header);
+$counter = 0;
+while(($line = fgets($files['input'])) !== false) {
+	if(strstr($line, '!|||||||||||') > -1) {
+		echo 'Skipping comment on keyboards...'.PHP_EOL;
+		continue;
+	}
+	$pieces = nuke($line, count($header));
+	$in = new Item(trim($pieces[0]));
+
+	if($pieces[1] === 'Mouse') {
+		$in->addFeature('type', 'mouse');
+	} else if($pieces[1] === 'Tastiera') {
+		$in->addFeature('type', 'keyboard');
+	} else {
+		stop('Unknown type: ' . $pieces[1], $line);
+	}
+
+	switch(trim($pieces[2])) {
+		case 'PS/2':
+			$in->addFeature('ps2-ports-n', 1);
+			break;
+		case 'USB':
+			$in->addFeature('usb-ports-n', 1);
+			break;
+		case 'Seriale':
+			$in->addFeature('serial-ports-n', 1);
+			break;
+		case 'Wireless (in)':
+			$in->addFeature('wireless-receiver', 'inside');
+			break;
+		case 'Wireless (near)':
+			$in->addFeature('wireless-receiver', 'near');
+			break;
+		case 'Wireless (no)':
+			$in->addFeature('wireless-receiver', 'missing');
+			break;
+		default:
+			stop('Unknown connector type', $line);
+	}
+
+	$pieces[3] === '' ?: $in->addFeature('brand', $pieces[3]);
+	$pieces[4] === '' ?: $in->addFeature('model', $pieces[4]);
+	working($in, $pieces[5], $line);
+	$pieces[6] === '' ?: colorify($in, $pieces[6], $line);
+	$pieces[7] === '' ?: $in->addFeature('notes', trim($pieces[7]));
+	($pieces[8] === '' || $pieces[8] === '-') ?: $in->addFeature('sn', $pieces[8]);
+	placeinto($in, $pieces[9], $line);
+	$pieces[11] === '' ?: $in->addFeature('owner', trim($pieces[11]));
+
+	$missing = $pieces[9] === 'Perso' || $pieces[9] === 'Duplicato';
+	$noserial = $pieces[8] === '';
+	$wrongcode = $pieces[0]{1} === 'A';
+	
+	if($missing) {
+		if($noserial || $wrongcode) {
+			$in->addFeature('check', 'wrong-location-and-data');
+		} else {
+			$in->addFeature('check', 'missing-data');
+		}
+	} else if($noserial) {
+		$in->addFeature('check', 'missing-data');
+	} else if($wrongcode) {
+		$in->addFeature('check', 'wrong-data');
+	}
+
+	$counter++;
+}
+$files['input'] = $counter;
 
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
