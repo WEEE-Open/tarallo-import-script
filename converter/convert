@@ -31,10 +31,10 @@ function nuke($line, $expected) {
 	if(count($pieces) !== $expected) {
 		stop('Expected ' . $expected . ' pieces, found ' . count($pieces), $line);
 	}
-	if(trim($pieces[0]) === '') {
-		notice('Skipping item without code', $line);
-		return null;
-	}
+	//if(trim($pieces[0]) === '') {
+	//	notice('Skipping item without code', $line);
+	//	return null;
+	//}
 	return $pieces;
 }
 
@@ -167,7 +167,26 @@ function placeinto(Item $item, $parent, $line) {
 	return null;
 }
 
-$files = ['monitor', 'ram', 'hdd'];
+function colorify(Item $item, $color, $line) {
+	$color = strtolower($color);
+	switch($color) {
+		case 'bianco':
+			$item->addFeature('color', 'white');
+			return;
+		case 'nero':
+			$item->addFeature('color', 'black');
+			return;
+		case 'grigio':
+			$item->addFeature('color', 'grey');
+			return;
+		case 'blu':
+			$item->addFeature('color', 'blue');
+			return;
+	}
+	stop('Unknown color: ' . $color, $line);
+}
+
+$files = ['monitor', 'ram', 'hdd', 'odd'];
 $files = array_flip($files);
 foreach($files as $file => $useless) {
 	$handle = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . $file . '.csv', "r");
@@ -185,9 +204,6 @@ $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['monitor'])) !== false) {
 	$pieces = nuke($line, count($header));
-	if($pieces === null) {
-		continue;
-	}
 	$monitor = new Item(trim($pieces[0]));
 	$monitor->addFeature('type', 'monitor');
 	if($pieces[1] !== '' && $pieces[1] !== '-') {
@@ -290,6 +306,7 @@ while(($line = fgets($files['hdd'])) !== false) {
 			break;
 		case 'SCSI DB68':
 			$hdd->addFeature('scsi-db68-ports-n', 1);
+			array_key_exists('check', $hdd->getFeatures()) ?: $hdd->addFeature('check', 'wrong-location');
 			break;
 		case 'SCSI':
 			$hdd->addFeature('scsi-sca2-ports-n', 1);
@@ -322,7 +339,6 @@ while(($line = fgets($files['hdd'])) !== false) {
 		if(strpos($thing, ',') > -1) {
 			$thing = str_replace(',', '.', $thing);
 			$size = (int) ((double) $thing * 1000000000.0);
-			echo $size . PHP_EOL;
 		} else {
 			$size = trim($pieces[3]) * 1000000000;
 		}
@@ -378,6 +394,61 @@ while(($line = fgets($files['hdd'])) !== false) {
 }
 $files['hdd'] = $counter;
 
+
+$header = fgets($files['odd']);
+$header = explode('|', $header);
+$counter = 0;
+while(($line = fgets($files['odd'])) !== false) {
+	$pieces = nuke($line, count($header));
+	if($pieces === null) {
+		continue;
+	}
+	$odd = new Item(trim($pieces[0]));
+
+	switch(trim($pieces[1])) {
+		case 'IDE':
+			$odd->addFeature('ide-ports-n', 1);
+			break;
+		case 'SATA':
+			$odd->addFeature('sata-ports-n', 1);
+			break;
+		case 'Proprietario':
+			break;
+		default:
+			stop('Unknown connector type', $line);
+	}
+
+	if($pieces[2] !== '') {
+		$type = strtolower(trim($pieces[2])) . '-' . strtolower(trim($pieces[3]));
+		$subpieces = explode(' ', $pieces[2],2);
+		assert(count($subpieces) > 0);
+		$odd->addFeature('odd-type', $type);
+	} else {
+		array_key_exists('check', $odd->getFeatures()) ?: $odd->addFeature('check', 'missing-data');
+	}
+
+
+	$pieces[4] === '' ?: $odd->addFeature('brand', $pieces[4]);
+	$pieces[5] === '' ?: $odd->addFeature('model', $pieces[5]);
+	working($odd, $pieces[6], $line);
+
+
+	if($pieces[7] === '') {
+		array_key_exists('check', $odd->getFeatures()) ?: $odd->addFeature('check', 'missing-data');
+	} else {
+		if($pieces[7] !== '-') {
+			$odd->addFeature('sn', $pieces[7]);
+		}
+	}
+
+	$pieces[8] === '' ?: $odd->addFeature('notes', trim($pieces[8]));
+	$pieces[9] === '' ?: colorify($odd, $pieces[9], $line);
+	$pieces[12] === '' ?: $odd->addFeature('owner', trim($pieces[12]));
+	placeinto($odd, $pieces[10], $line);
+	$counter++;
+}
+$files['odd'] = $counter;
+
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
 
@@ -402,7 +473,9 @@ $pdo->exec('USE ' . DBNAME);
 $pdo->exec(file_get_contents('database.sql'));
 $pdo->exec(file_get_contents('database-data.sql'));
 $pdo->exec('INSERT INTO `User` (`UserID`, `Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
-(0,	\'IMPORT\',	\'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\',	1507496724,	1)');
+(0,	\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', 1507496724,	1)');
+$pdo->exec('INSERT INTO `User` (`UserID`, `Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
+(0,	\'asd\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', 1507496724,	1)');
 
 echo 'Importing Item tree...'.PHP_EOL;
 $db->modificationDAO()->modifcationBegin(new WEEEOpen\Tarallo\User('IMPORT', 'asd'));
