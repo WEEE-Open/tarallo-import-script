@@ -204,7 +204,7 @@ function colorify(Item $item, $color, $line) {
 	stop('Unknown color: ' . $color, $line);
 }
 
-$files = ['monitor', 'ram', 'hdd', 'odd', 'input'];
+$files = ['monitor', 'ram', 'hdd', 'odd', 'input', 'cards'];
 $files = array_flip($files);
 foreach($files as $file => $useless) {
 	$handle = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . $file . '.csv', "r");
@@ -530,6 +530,107 @@ while(($line = fgets($files['input'])) !== false) {
 	$counter++;
 }
 $files['input'] = $counter;
+
+$header = fgets($files['cards']);
+$header = explode('|', $header);
+$counter = 0;
+while(($line = fgets($files['cards'])) !== false) {
+	$pieces = nuke($line, count($header));
+	$in = new Item(trim($pieces[0]));
+
+	switch($pieces[1]) {
+		case 'Audio':
+			$in->addFeature('type', 'audio-card');
+			break;
+		case 'Ethernet':
+			$in->addFeature('type', 'ethernet-card');
+			break;
+		case 'Modem':
+			$in->addFeature('type', 'modem-card');
+			break;
+		case 'Grafica':
+			$in->addFeature('type', 'graphics-card');
+			$in->addFeature('hay-gpu', 'yes');
+			break;
+		case 'USB':
+		case 'Firewire':
+		case 'Seriale':
+		case '?':
+			$in->addFeature('type', 'other-card');
+			break;
+		case 'WiFi':
+			$in->addFeature('type', 'wifi-card');
+			break;
+		case 'SCSI':
+			$in->addFeature('type', 'scsi-card');
+			break;
+		case 'Bracket':
+			$in->addFeature('type', 'ports-bracket');
+			break;
+		default:
+		stop('Unknown type: ' . $pieces[1], $line);
+	}
+
+	$hasports = false;
+	// It's as wonderful and dreadful as it looks.
+	$pieces[2]  === '' ?: $in->addFeature('ethernet-ports-10m-n', (int) $pieces[2]) && $hasports = true;
+	$pieces[3]  === '' ?: $in->addFeature('ethernet-ports-100m-n', (int) $pieces[3]) && $hasports = true;
+	$pieces[4]  === '' ?: $in->addFeature('ethernet-ports-1000m-n', (int) $pieces[4]) && $hasports = true;
+	$pieces[5]  === '' ?: $in->addFeature('ethernet-ports-10base2-bnc-n', (int) $pieces[5]) && $hasports = true;
+	$pieces[6]  === '' ?: $in->addFeature('ethernet-ports-10base5-aui-n', (int) $pieces[6]) && $hasports = true;
+	$pieces[7]  === '' ?: $in->addFeature('rj11-ports-n', (int) $pieces[7]) && $hasports = true;
+	$pieces[8]  === '' ?: $in->addFeature('midi-ports-n', (int) $pieces[8]) && $hasports = true;
+	$pieces[9]  === '' ?: $in->addFeature('mini-jack-ports-n', (int) $pieces[9]) && $hasports = true;
+	$pieces[10] === '' ?: $in->addFeature('rca-mono-ports-n', (int) $pieces[10]) && $hasports = true;
+	$pieces[11] === '' ?: $in->addFeature('dvi-ports-n', (int) $pieces[11]) && $hasports = true;
+	$pieces[12] === '' ?: $in->addFeature('dms-59-ports-n', (int) $pieces[12]) && $hasports = true;
+	$pieces[13] === '' ?: $in->addFeature('vga-ports-n', (int) $pieces[13]) && $hasports = true;
+	$pieces[14] === '' ?: $in->addFeature('s-video-ports-n', (int) $pieces[14]) && $hasports = true;
+	$pieces[15] === '' ?: $in->addFeature('tv-out-ports-n', (int) $pieces[15]) && $hasports = true;
+	$pieces[16] === '' ?: $in->addFeature('usb-ports-n', (int) $pieces[16]) && $hasports = true;
+	$pieces[17] === '' ?: $in->addFeature('serial-ports-n', (int) $pieces[17]) && $hasports = true;
+	$pieces[18] === '' ?: $in->addFeature('serial-db25-ports-n', (int) $pieces[18]) && $hasports = true;
+	$pieces[19] === '' ?: $in->addFeature('firewire-ports-n', (int) $pieces[19]) && $hasports = true;
+	$pieces[20] === '' ?: $in->addFeature('scsi-db68-ports-n', (int) $pieces[20]) && $hasports = true;
+
+	switch($pieces[21]) {
+		case 'PCI':
+			$in->addFeature('pci-sockets-n', 1);
+			break;
+		case 'PCIe':
+			$in->addFeature('pcie-sockets-n', 1);
+			break;
+		case 'AGP':
+			$in->addFeature('agp-sockets-n', 1);
+			break;
+		case 'ISA':
+			$in->addFeature('isa-sockets-n', 1);
+			break;
+		case 'Mini PCIe':
+			$in->addFeature('mini-pcie-sockets-n', 1);
+			break;
+		case '-':
+		case '':
+			break;
+		default:
+			stop('Unknown connector: ' . $pieces[1], $line);
+	}
+	$pieces[22] === '' ?: $in->addFeature('brand', $pieces[22]);
+	$pieces[23] === '' ?: $in->addFeature('model', $pieces[23]);
+	$pieces[24] === '' ?: $in->addFeature('capacity-byte', 1024 * 1024 * (int) $pieces[24]); // video RAM (for graphics cards)
+	working($in, $pieces[25], $line);
+	($pieces[26] === '' || $pieces[26] === '-') ?: $in->addFeature('sn', $pieces[26]);
+	$pieces[27] === '' ?: $in->addFeature('notes', trim($pieces[27]));
+	placeinto($in, $pieces[28], $line);
+	$pieces[11] === '' ?: $in->addFeature('owner', trim($pieces[30]));
+
+	if($pieces[26] === '' || $pieces[21] === '' || !$hasports) {
+		$in->addFeature('check', 'missing-data');
+	}
+
+	$counter++;
+}
+$files['cards'] = $counter;
 
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
