@@ -11,7 +11,7 @@ use WEEEOpen\Tarallo\Item;
 define('DBNAME', 'tarallo_import');
 // That's not the production server, OBVIOUSLY. This is run on testing, then database will be exported and imported again in production.
 $db = new Database('root', 'root', 'mysql:host=127.0.0.1');
-
+$check = 0; // How many items should be manually checked
 
 function stop($error, $line) {
 	echo $error.PHP_EOL;
@@ -236,7 +236,7 @@ while(($line = fgets($files['monitor'])) !== false) {
 	working($monitor, $pieces[5], $line);
 	$pieces[6] === '-' ?: $monitor->addFeature('vga-ports-n', 1);
 	$pieces[7] === '-' ?: $monitor->addFeature('dvi-ports-n', 1);
-	$pieces[8] === '-' ?: ($monitor->addFeature('usb-ports-n', 2) && $monitor->addFeature('check', 'wrong-data'));
+	$pieces[8] === '-' ?: ($monitor->addFeature('usb-ports-n', 2) && $monitor->addFeature('check', 'wrong-data') && $check++);
 	$pieces[9] === '-' ?: $monitor->addFeature('hdmi-ports-n', 1);
 	$pieces[10] === '' ?: $monitor->addFeature('notes', trim($pieces[10]));
 	placeinto($monitor, $pieces[11], $line);
@@ -280,6 +280,7 @@ while(($line = fgets($files['ram'])) !== false) {
 		$pieces[7] === '' || $pieces[7] === '-' ?: $ram->addFeature('sn', trim($pieces[7]));
 	if(mb_substr($pieces[7], 0, 3) === '...' || mb_substr($pieces[7], 0, 1) === '…') {
 		$ram->addFeature('check', 'missing-data');
+		$check++;
 	}
 	$pieces[8] === '' ?: $ram->addFeature('notes', trim($pieces[8]));
 	placeinto($ram, $pieces[9], $line);
@@ -299,11 +300,13 @@ while(($line = fgets($files['hdd'])) !== false) {
 
 	if(trim($pieces[0]) === 'HDD2') {
 		$hdd->addFeature('check', 'wrong-data');
+		$check++;
 	}
 
 	if(substr($pieces[11], 0, 5) === 'Perso') {
 		placeinto($hdd, 'Chernobyl', $line);
 		$hdd->addFeature('check', 'wrong-location');
+		$check++;
 	} else {
 		placeinto($hdd, $pieces[11], $line);
 	}
@@ -320,11 +323,11 @@ while(($line = fgets($files['hdd'])) !== false) {
 			break;
 		case 'SCSI DB68':
 			$hdd->addFeature('scsi-db68-ports-n', 1);
-			array_key_exists('check', $hdd->getFeatures()) ?: $hdd->addFeature('check', 'wrong-location');
+			array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'wrong-location') && $check++);
 			break;
 		case 'SCSI':
 			$hdd->addFeature('scsi-sca2-ports-n', 1);
-			array_key_exists('check', $hdd->getFeatures()) ?: $hdd->addFeature('check', 'wrong-data');
+			array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'wrong-data') && $check++);
 			break;
 		default:
 			stop('Unknown connector type', $line);
@@ -347,7 +350,7 @@ while(($line = fgets($files['hdd'])) !== false) {
 	}
 
 	if($pieces[3] === '') {
-		array_key_exists('check', $hdd->getFeatures()) ?: $hdd->addFeature('check', 'missing-data');
+		array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'missing-data') && $check++);
 	} else {
 		$thing = trim($pieces[3]);
 		if(strpos($thing, ',') > -1) {
@@ -362,7 +365,7 @@ while(($line = fgets($files['hdd'])) !== false) {
 	$pieces[4] === '' ?: $hdd->addFeature('spin-rate-rpm', (int) $pieces[4]);
 
 	if($pieces[5] === '') {
-		array_key_exists('check', $hdd->getFeatures()) ?: $hdd->addFeature('check', 'missing-data');
+		array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'missing-data') && $check++);
 	} else {
 		$hdd->addFeature('sn', $pieces[5]);
 	}
@@ -435,7 +438,7 @@ while(($line = fgets($files['odd'])) !== false) {
 		assert(count($subpieces) > 0);
 		$odd->addFeature('odd-type', $type);
 	} else {
-		array_key_exists('check', $odd->getFeatures()) ?: $odd->addFeature('check', 'missing-data');
+		array_key_exists('check', $odd->getFeatures()) ?: ($odd->addFeature('check', 'missing-data') && $check++);
 	}
 
 
@@ -445,7 +448,7 @@ while(($line = fgets($files['odd'])) !== false) {
 
 
 	if($pieces[7] === '') {
-		array_key_exists('check', $odd->getFeatures()) ?: $odd->addFeature('check', 'missing-data');
+		array_key_exists('check', $odd->getFeatures()) ?: ($odd->addFeature('check', 'missing-data') && $check++);
 	} else {
 		if($pieces[7] !== '-') {
 			$odd->addFeature('sn', $pieces[7]);
@@ -518,13 +521,17 @@ while(($line = fgets($files['input'])) !== false) {
 	if($missing) {
 		if($noserial || $wrongcode) {
 			$in->addFeature('check', 'wrong-location-and-data');
+			$check++;
 		} else {
 			$in->addFeature('check', 'missing-data');
+			$check++;
 		}
 	} else if($noserial) {
 		$in->addFeature('check', 'missing-data');
+		$check++;
 	} else if($wrongcode) {
 		$in->addFeature('check', 'wrong-data');
+		$check++;
 	}
 
 	$counter++;
@@ -626,6 +633,7 @@ while(($line = fgets($files['cards'])) !== false) {
 
 	if($pieces[26] === '' || $pieces[21] === '' || !$hasports) {
 		$in->addFeature('check', 'missing-data');
+		$check++;
 	}
 
 	$counter++;
@@ -634,6 +642,11 @@ $files['cards'] = $counter;
 
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
+$total = 0;
+foreach($files as $counter) {
+	$total += $counter;
+}
+printf("Items that need manual adjustments: %d of %d (%-4.1f%%)\n", $check, $total, 100*($check/$total));
 
 // Items are JSON encoded by the API, so this is quite legible:
 //echo json_encode($polito, JSON_PRETTY_PRINT);
