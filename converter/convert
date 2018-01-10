@@ -204,7 +204,7 @@ function colorify(Item $item, $color, $line) {
 	stop('Unknown color: ' . $color, $line);
 }
 
-$files = ['monitor', 'ram', 'hdd', 'odd', 'input', 'cards'];
+$files = ['monitor', 'ram', 'hdd', 'odd', 'input', 'cards', 'psu'];
 $files = array_flip($files);
 foreach($files as $file => $useless) {
 	$handle = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . $file . '.csv', "r");
@@ -629,7 +629,7 @@ while(($line = fgets($files['cards'])) !== false) {
 	($pieces[26] === '' || $pieces[26] === '-') ?: $in->addFeature('sn', $pieces[26]);
 	$pieces[27] === '' ?: $in->addFeature('notes', trim($pieces[27]));
 	placeinto($in, $pieces[28], $line);
-	$pieces[11] === '' ?: $in->addFeature('owner', trim($pieces[30]));
+	$pieces[30] === '' ?: $in->addFeature('owner', trim($pieces[30]));
 
 	if($pieces[26] === '' || $pieces[21] === '' || !$hasports) {
 		$in->addFeature('check', 'missing-data');
@@ -639,6 +639,73 @@ while(($line = fgets($files['cards'])) !== false) {
 	$counter++;
 }
 $files['cards'] = $counter;
+
+$header = fgets($files['psu']);
+$header = explode('|', $header);
+$counter = 0;
+while(($line = fgets($files['psu'])) !== false) {
+	$pieces = nuke($line, count($header));
+
+	$missing = false;
+	$psu = new Item(trim($pieces[0]));
+
+	// TODO: power connectors (C13, DA-2, barrel, etc...)
+	// TODO: ATX type (old, 12V, extended, P4, etc...)
+
+	if(trim($pieces[1]) === '-' || $pieces[4] === 'Dell DA-2') {
+		$psu->addFeature('type', 'external-psu');
+		$pieces[2] === '' ? $missing = true : $psu->addFeature('psu-volt', (int) $pieces[2]);
+		$pieces[3] === '' ? $missing = true : $psu->addFeature('psu-ampere', (int) $pieces[3]); // sometimes these are fraction, but it isn't representable in database right now...
+	} else {
+		$psu->addFeature('type', 'psu');
+		$pieces[1] === '?' ? $missing = true : $psu->addFeature('power-rated-watt', (int) $pieces[1]);
+		if($pieces[6] === '-') {
+			stop('SATA port number set to "not applicable" for internal PSU', $line);
+		} else {
+			$pieces[6] === '' ? $missing = true : $psu->addFeature('sata-ports-n', (int) $pieces[6]);
+		}
+		if($pieces[5] === '-') {
+			stop('PCIe power pins set to "not applicable" for internal PSU', $line);
+		} else {
+			switch($pieces[5]) {
+				case '':
+					$missing = true;
+					break;
+				case '0':
+					break;
+				case '8':
+					$psu->addFeature('pcie-power', '8pin');
+					break;
+				case '4':
+					$psu->addFeature('pcie-power', '4pin');
+					break;
+				default:
+					stop('Unknown PCIe power: ' . $pieces[5], $line);
+			}
+		}
+	}
+
+	$pieces[7] === '' ?: $psu->addFeature('brand', $pieces[7]);
+	$pieces[8] === '' ?: $psu->addFeature('brand-reseller', $pieces[8]);
+	$pieces[9] === '' ?: $psu->addFeature('model', $pieces[9]);
+	working($psu, $pieces[10], $line);
+	($pieces[11] === '' || $pieces[11] === '-') ?: $psu->addFeature('sn', $pieces[11]);
+	$pieces[12] === '' ?: $psu->addFeature('notes', trim($pieces[12]));
+	placeinto($psu, $pieces[13], $line);
+	$pieces[15] === '' ?: $psu->addFeature('owner', trim($pieces[15]));
+
+	if($missing) {
+		if($pieces[13] === 'Perso') {
+			$psu->addFeature('check', 'wrong-location-and-data');
+		} else {
+			$psu->addFeature('check', 'missing-data');
+		}
+		$check++;
+	}
+
+	$counter++;
+}
+$files['psu'] = $counter;
 
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
