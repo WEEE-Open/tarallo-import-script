@@ -246,12 +246,13 @@ while(($line = fgets($files['monitor'])) !== false) {
 			$monitor->addFeature('power-connector', 'c13');
 		}
 	}
+	$pieces[14] === '' ?: $monitor->addFeature('sn', trim($pieces[14]));
 	placeinto($monitor, $pieces[15], $line);
 	// TODO: handle "data di carico" (even though they're mostly random)
-	if($pieces[14] === 'AreaIT') {
-		$pieces[14] = 'Area IT';
+	if($pieces[17] === 'AreaIT') {
+		$pieces[17] = 'Area IT';
 	}
-	$pieces[14] === '' ?: $monitor->addFeature('owner', trim($pieces[14]));
+	$pieces[17] === '' ?: $monitor->addFeature('owner', trim($pieces[17]));
 	$counter++;
 }
 $files['monitor'] = $counter;
