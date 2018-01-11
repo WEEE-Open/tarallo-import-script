@@ -204,7 +204,7 @@ function colorify(Item $item, $color, $line) {
 	stop('Unknown color: ' . $color, $line);
 }
 
-$files = ['monitor', 'ram', 'hdd', 'odd', 'input', 'cards', 'psu'];
+$files = ['monitor', 'ram', 'hdd', 'odd', 'input', 'cards', 'psu', 'fdd'];
 $files = array_flip($files);
 foreach($files as $file => $useless) {
 	$handle = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . $file . '.csv', "r");
@@ -227,24 +227,26 @@ while(($line = fgets($files['monitor'])) !== false) {
 	if($pieces[1] !== '' && $pieces[1] !== '-') {
 		$monitor->addFeature('cib', trim($pieces[1]));
 	}
-	if($pieces[2] !== '' && $pieces[2] !== '-') {
-		// TODO: discernere vecchi codici di inventario da "altro" (non serve a nulla memorizzarli, ma se perdiamo il CIB e il nostro codice per qualche ragione almeno c'è un'etichetta univoca sopra...)
+	if($pieces[1] !== '' && $pieces[2] !== '-') {
+		$monitor->addFeature('cib-old', trim($pieces[1]));
+	}
+	if($pieces[3] !== '' && $pieces[3] !== '-') {
 		$monitor->addFeature('other-code', trim($pieces[2]));
 	}
-	$pieces[3] === '' ?: $monitor->addFeature('brand', trim($pieces[3]));
-	($pieces[4] === '' || $pieces[4] === '-') ?: $monitor->addFeature('model', trim($pieces[4]));
-	working($monitor, $pieces[5], $line);
-	$pieces[6] === '-' ?: $monitor->addFeature('vga-ports-n', 1);
-	$pieces[7] === '-' ?: $monitor->addFeature('dvi-ports-n', 1);
-	$pieces[8] === '-' ?: ($monitor->addFeature('usb-ports-n', 2) && $monitor->addFeature('check', 'wrong-data') && $check++);
-	$pieces[9] === '-' ?: $monitor->addFeature('hdmi-ports-n', 1);
-	$pieces[10] === '' ?: $monitor->addFeature('notes', trim($pieces[10]));
-	placeinto($monitor, $pieces[11], $line);
+	$pieces[4] === '' ?: $monitor->addFeature('brand', trim($pieces[4]));
+	($pieces[5] === '' || $pieces[5] === '-') ?: $monitor->addFeature('model', trim($pieces[5]));
+	working($monitor, $pieces[6], $line);
+	$pieces[7] === '-' ?: $monitor->addFeature('vga-ports-n', 1);
+	$pieces[8] === '-' ?: $monitor->addFeature('dvi-ports-n', 1);
+	$pieces[9] === '-' ?: ($monitor->addFeature('usb-ports-n', 2) && $monitor->addFeature('check', 'wrong-data') && $check++);
+	$pieces[10] === '-' ?: $monitor->addFeature('hdmi-ports-n', 1);
+	$pieces[11] === '' ?: $monitor->addFeature('notes', trim($pieces[11]));
+	placeinto($monitor, $pieces[12], $line);
 	// TODO: handle "data di carico" (even though they're mostly random)
-	if($pieces[13] === 'AreaIT') {
-		$pieces[13] = 'Area IT';
+	if($pieces[14] === 'AreaIT') {
+		$pieces[14] = 'Area IT';
 	}
-	$pieces[13] === '' ?: $monitor->addFeature('owner', trim($pieces[13]));
+	$pieces[14] === '' ?: $monitor->addFeature('owner', trim($pieces[13]));
 	$counter++;
 }
 $files['monitor'] = $counter;
@@ -649,15 +651,37 @@ while(($line = fgets($files['psu'])) !== false) {
 	$missing = false;
 	$psu = new Item(trim($pieces[0]));
 
-	// TODO: power connectors (C13, DA-2, barrel, etc...)
-	// TODO: ATX type (old, 12V, extended, P4, etc...)
+	if($psu->getCode() === 'A64') {
+		$psu->addFeature('color', 'golden');
+	}
 
 	if(trim($pieces[1]) === '-' || $pieces[4] === 'Dell DA-2') {
 		$psu->addFeature('type', 'external-psu');
 		$pieces[2] === '' ? $missing = true : $psu->addFeature('psu-volt', (int) $pieces[2]);
-		$pieces[3] === '' ? $missing = true : $psu->addFeature('psu-ampere', (int) $pieces[3]); // sometimes these are fraction, but it isn't representable in database right now...
+		$pieces[3] === '' ? $missing = true : $psu->addFeature('psu-ampere', (int) $pieces[3]); // sometimes these are fractional, but that isn't representable in database right now...
+		if(trim($pieces[4]) === '?') {
+			$missing = true;
+		} else {
+			switch(trim($pieces[4])) {
+				case 'Barrel':
+					$psu->addFeature('power-connector', 'barrel');
+					break;
+				case 'Mini USB':
+					$psu->addFeature('power-connector', 'miniusb');
+					break;
+				case 'Proprietario':
+					$psu->addFeature('power-connector', 'proprietary');
+					break;
+				case 'Dell DA-2':
+					$psu->addFeature('power-connector', 'da-2');
+					break;
+				default:
+					stop('Uknown external PSU type: ' . $pieces[4], $line);
+			}
+		}
 	} else {
 		$psu->addFeature('type', 'psu');
+		$psu->addFeature('power-connector', 'c13');
 		$pieces[1] === '?' ? $missing = true : $psu->addFeature('power-rated-watt', (int) $pieces[1]);
 		if($pieces[6] === '-') {
 			stop('SATA port number set to "not applicable" for internal PSU', $line);
@@ -667,20 +691,40 @@ while(($line = fgets($files['psu'])) !== false) {
 		if($pieces[5] === '-') {
 			stop('PCIe power pins set to "not applicable" for internal PSU', $line);
 		} else {
-			switch($pieces[5]) {
-				case '':
-					$missing = true;
+			$psu->addFeature('pcie-power', (int) trim($pieces[5]));
+		}
+		if(trim($pieces[4]) === '?') {
+			$missing = true;
+		} else {
+			switch(trim($pieces[4])) {
+				case 'ATX12V + 4 pin':
+				case 'CFX12V + 4 pin':
+				case 'LFX12V + 4 pin':
+					$psu->addFeature('psu-socket', 'atx12v-4pin');
 					break;
-				case '0':
+				case 'ATX12V + 8 pin':
+					$psu->addFeature('psu-socket', 'atx12v-8pin');
 					break;
-				case '8':
-					$psu->addFeature('pcie-power', '8pin');
-					break;
-				case '4':
-					$psu->addFeature('pcie-power', '4pin');
+				case 'ATX12V':
+					$psu->addFeature('psu-socket', 'atx12v');
 					break;
 				default:
-					stop('Unknown PCIe power: ' . $pieces[5], $line);
+					stop('Uknown internal PSU type: ' . $pieces[4], $line);
+			}
+			switch(trim($pieces[4])) {
+				case 'CFX12V + 4 pin':
+					$psu->addFeature('psu-form-factor', 'cfx');
+					break;
+				case 'LFX12V + 4 pin':
+					$psu->addFeature('psu-form-factor', 'lfx');
+					break;
+				case 'ATX12V':
+				case 'ATX12V + 4 pin':
+				case 'ATX12V + 8 pin':
+					$psu->addFeature('psu-form-factor', 'atx');
+					break;
+				default:
+					stop('Uknown internal PSU type (again): ' . $pieces[4], $line);
 			}
 		}
 	}
@@ -706,6 +750,31 @@ while(($line = fgets($files['psu'])) !== false) {
 	$counter++;
 }
 $files['psu'] = $counter;
+
+$header = fgets($files['fdd']);
+$header = explode('|', $header);
+$counter = 0;
+while(($line = fgets($files['fdd'])) !== false) {
+	$pieces = nuke($line, count($header));
+	$in = new Item(trim($pieces[0]));
+
+	if($in->getCode() === 'FL20') {
+		$in->addFeature('type', 'zip-drive');
+	} else {
+		$in->addFeature('type', 'fdd');
+	}
+
+	$pieces[1] === '' ?: $in->addFeature('brand', $pieces[1]);
+	$pieces[2] === '' ?: $in->addFeature('model', $pieces[2]);
+	($pieces[3] === '' || $pieces[3] === '-') ?: $in->addFeature('sn', $pieces[3]);
+	working($in, $pieces[4], $line);
+	$pieces[5] === '' ?: $in->addFeature('notes', trim($pieces[5]));
+	placeinto($in, $pieces[6], $line);
+	$pieces[8] === '' ?: $in->addFeature('owner', trim($pieces[8]));
+
+	$counter++;
+}
+$files['fdd'] = $counter;
 
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
