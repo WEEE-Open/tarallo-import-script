@@ -293,6 +293,11 @@ while(($line = fgets($files['ram'])) !== false) {
 	$pieces[8] === '' ?: $ram->addFeature('notes', trim($pieces[8]));
 	placeinto($ram, $pieces[9], $line);
 	$pieces[11] === '' ?: $ram->addFeature('owner', trim($pieces[11]));
+
+	if(strtoupper($pieces[9]) === 'EMILIA' || strtoupper($pieces[9]) === 'ROSETTA' || strtoupper($pieces[9]) === 'ROSITA') {
+		$ram->addFeature('ram-ecc', 'yes');
+	}
+
 	$counter++;
 }
 $files['ram'] = $counter;
@@ -426,6 +431,7 @@ $counter = 0;
 while(($line = fgets($files['odd'])) !== false) {
 	$pieces = nuke($line, count($header));
 	$odd = new Item(trim($pieces[0]));
+	$odd->addFeature('type', 'odd');
 
 	switch(trim($pieces[1])) {
 		case 'IDE':
