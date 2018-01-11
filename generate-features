@@ -74,6 +74,23 @@ foreach($features as $id => $values) {
 }
 $result .= '// END GENERATED CODE'.PHP_EOL;
 
-file_put_contents('features.generated.js', $result);
+// Safer alternative:
+//file_put_contents('features.generated.js', $result);
+//echo 'Done. Run "cat features.generated.js >> tarallo-frontend/js/features.js" and manually merge the file'.PHP_EOL;
 
-echo 'Done. Run "cat features.generated.js >> tarallo-frontend/js/features.js" and manually merge the file'.PHP_EOL;
+$js = file_get_contents('tarallo-frontend' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'features.js');
+
+$pieces = explode('// BEGIN GENERATED CODE' . PHP_EOL, $js, 2);
+if(count($pieces) < 2) {
+	echo 'Cannot find // BEGIN GENERATED CODE (followed by a newline in current platform format, which may be the problem) in tarallo-frontend/js/features.js';
+	exit(1);
+}
+
+$pieces2 = explode('// END GENERATED CODE', $js, 2);
+if(count($pieces2) < 2) {
+	echo 'Cannot find // END GENERATED CODE in tarallo-frontend/js/features.js';
+	exit(1);
+}
+
+file_put_contents('tarallo-frontend' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'features.js', $pieces[0] . $result . $pieces2[1]);
+echo 'Done. Check "tarallo-frontend/js/features.js" and commit changes'.PHP_EOL;
