@@ -10,6 +10,7 @@ Refer to those repos for documentation.
 
 Everything is already configured in Vagrantfile and install.sh, just run `vagrant up`
 and you will get:
+
 * a client instance running at `127.0.0.1:8080/tarallo`
 * a server one instance at `127.0.0.1:8080/server`
 * Xdebug enabled by default with IDE key `vagrant` (or use 
@@ -41,9 +42,9 @@ These are PHP scripts which can be run directly or by using `php script-name`.
 
 ### Feature list generation
 
-`generate-features` takes `tarallo-backend/database-data.php` from backend,
-converts into some JS code and places it into `features.generated.js`. That code
-should be appended to `tarallo-frontend/js/feratures.js` after being manually reviewed.
+`generate-features` reads the feature list from `tarallo-backend/database-data.sql`,
+converts it to JS code and places it into `tarallo-frontend/js/feratures.js`,
+which should be manually reviewed and commited afterwards.
 
 ### Inserting initial data
 
@@ -51,10 +52,10 @@ should be appended to `tarallo-frontend/js/feratures.js` after being manually re
 and stores it in the database.
 
 Since csv structure is quite complex and chaotic and full of
-exceptions and, most importantly, depends on our current inventory structure (an ods 
+exceptions and, most importantly, depends on the structure of our current inventory (an ods
 spreadsheet with 13 distinct pages and hundreds of rows in each) which is not public, this is
 practically useless to anyone. However it should give you an idea on how to use the addContent, 
-addFeature and addItems methods work, to import data directly into the database rather than by
+addFeature and addItems methods to import data directly into the database rather than by
 JSON API or manual input.
 
 Note that this script runs only if current directory is the `convert` directory.
