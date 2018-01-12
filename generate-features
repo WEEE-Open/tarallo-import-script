@@ -72,7 +72,7 @@ foreach($features as $id => $values) {
 	$array .= ']';
 	$result = str_replace('{REPLACE'.$id.'}', $array, $result);
 }
-$result .= '// END GENERATED CODE'.PHP_EOL;
+$result .= '// END GENERATED CODE';
 
 // Safer alternative:
 //file_put_contents('features.generated.js', $result);
