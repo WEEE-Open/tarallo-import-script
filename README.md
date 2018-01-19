@@ -44,7 +44,7 @@ These are PHP scripts which can be run directly or by using `php script-name`.
 
 `generate-features` reads the feature list from `tarallo-backend/database-data.sql`,
 converts it to JS code and places it into `tarallo-frontend/js/feratures.js`,
-which should be manually reviewed and commited afterwards.
+which should be manually reviewed and commited afterward.
 
 ### Inserting initial data
 
@@ -57,8 +57,6 @@ spreadsheet with 13 distinct pages and hundreds of rows in each) which is not pu
 practically useless to anyone. However it should give you an idea on how to use the addContent, 
 addFeature and addItems methods to import data directly into the database rather than by
 JSON API or manual input.
-
-Note that this script runs only if current directory is the `convert` directory.
 
 ## License
 

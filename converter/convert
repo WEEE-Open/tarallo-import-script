@@ -1,5 +1,6 @@
 #!/usr/bin/php
 <?php
+chdir(__DIR__);
 if(!chdir('../tarallo-backend')) {
 	echo 'Cannot change directory'.PHP_EOL;
 };

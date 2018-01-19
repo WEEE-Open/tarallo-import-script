@@ -1,5 +1,6 @@
 #!/usr/bin/php
 <?php
+chdir(__DIR__);
 $data = file_get_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'database-data.sql');
 $lines = preg_split('/[\n\r]/', $data, -1, PREG_SPLIT_NO_EMPTY);
 //$result = 'let features = new Map();'.PHP_EOL;
