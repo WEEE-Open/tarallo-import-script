@@ -852,6 +852,8 @@ while(($line = fgets($files['other'])) !== false) {
 		case 'Scanner':
 			$in->addFeature('type', 'scanner');
 			break;
+		default:
+			$in->addFeature('type', 'other');
 	}
 
 	trim($pieces[2]) === '' ?: $in->addFeature('cib', trim($pieces[2]));
