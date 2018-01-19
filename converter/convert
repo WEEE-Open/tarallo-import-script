@@ -68,7 +68,7 @@ $scatolaRAM = (new Item('BrokenRamBox'))->addFeature('type', 'location');
 $tavolo = (new Item('Tavolo'))->addFeature('type', 'location');
 $groot = (new Item('Groot'))->addFeature('type', 'location');
 $rotonda = (new Item('Rotonda'))->addFeature('type', 'location');
-$sottoaltavolo = (new Item('Sotto'))->addFeature('type', 'location');
+$sottoaltavolo = (new Item('UnderTable'))->addFeature('type', 'location');
 $zonablu = (new Item('ZonaBlu'))->addFeature('type', 'location');
 $zonarossa = (new Item('ZonaRossa'))->addFeature('type', 'location');
 $zonaground = (new Item('ZonaGround'))->addFeature('type', 'location');
@@ -78,6 +78,7 @@ $polito->addContent($chernobyl)->addContent($mrf);
 $chernobyl->addContent($armadiol)->addContent($armadior)->addContent($armadios)->addContent($armadiod)->addContent($tavolo)->addContent($groot)->addContent($rotonda)->addContent($zonablu)->addContent($zonarossa)->addContent($zonaground)->addContent($davanzale);
 $armadior->addContent($scatolaRAM);
 $tavolo->addContent($sottoaltavolo);
+$otherContainers = []; // Motherboards "contain" RAM sticks and CPUs
 
 // For testing only
 $case = [];
@@ -109,13 +110,15 @@ $case['EMILIA'] = $zonablu->addContent((new Item('EMILIA'))->addFeature('type', 
 $case['ROSETTA'] = $zonablu->addContent((new Item('ROSETTA'))->addFeature('type', 'case'));
 $case['ROSITA'] = $zonablu->addContent((new Item('ROSITA'))->addFeature('type', 'case'));
 $case['Gesoo'] = $zonablu->addContent((new Item('Gesoo'))->addFeature('type', 'case'));
+$case['SCHIFOMACCHINA'] = $tavolo->addContent((new Item('Schifomacchina'))->addFeature('type', 'case'));
 
-function placeinto(Item $item, $parent, $line) {
-	global $case;
-	if(isset($case[trim($parent)])) {
-		/** @noinspection PhpUndefinedMethodInspection */
-		$case[trim($parent)]->addContent($item);
-		return;
+function placeinto(Item $item, $parent, $line, $container = false) {
+	global $case, $otherContainers;
+	if($container) {
+		if(isset($container[$item->getCode()])) {
+			stop('Duplicate code', $line);
+		}
+		$otherContainers[$item->getCode()] = $item;
 	}
 	$where = preg_replace("/[^a-z]/", "", strtolower($parent));
 	switch($where) {
@@ -160,11 +163,28 @@ function placeinto(Item $item, $parent, $line) {
 		$armadiol->addContent($item);
 		return;
 	}
+	if(strstr($where, 'armadiod') > -1) {
+		global $armadiod;
+		/** @noinspection PhpUndefinedMethodInspection */
+		$armadiod->addContent($item);
+		return;
+	}
 	// TODO: handle this correctly
 	if(strstr($where, 'computer') > -1) {
 		global $armadiol;
 		/** @noinspection PhpUndefinedMethodInspection */
 		$armadiol->addContent($item);
+		return;
+	}
+	$parent = trim($parent);
+	if(isset($case[$parent])) {
+		/** @noinspection PhpUndefinedMethodInspection */
+		$case[$parent]->addContent($item);
+		return;
+	}
+	if(isset($otherContainers[$parent])) {
+		/** @noinspection PhpUndefinedMethodInspection */
+		$otherContainers[$parent]->addContent($item);
 		return;
 	}
 	stop('Unknown location: ' . $parent, $line);
@@ -198,6 +218,9 @@ function colorify(Item $item, $color, $line) {
 		case 'rosa':
 			$item->addFeature('color', 'pink');
 			return;
+		case 'marrone':
+			$item->addFeature('color', 'brown');
+			return;
 		case 'grigio scuro':
 			$item->addFeature('color', 'darkgrey');
 			return;
@@ -205,7 +228,7 @@ function colorify(Item $item, $color, $line) {
 	stop('Unknown color: ' . $color, $line);
 }
 
-$files = ['monitor', 'ram', 'hdd', 'odd', 'input', 'cards', 'psu', 'fdd'];
+$files = ['monitor', 'ram', 'hdd', 'odd', 'input', 'cards', 'psu', 'fdd', 'other'];
 $files = array_flip($files);
 foreach($files as $file => $useless) {
 	$handle = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . $file . '.csv', "r");
@@ -257,6 +280,7 @@ while(($line = fgets($files['monitor'])) !== false) {
 	$counter++;
 }
 $files['monitor'] = $counter;
+unset($monitor);
 
 $header = fgets($files['ram']);
 $header = explode('|', $header);
@@ -302,6 +326,7 @@ while(($line = fgets($files['ram'])) !== false) {
 	$counter++;
 }
 $files['ram'] = $counter;
+unset($ram);
 
 
 $header = fgets($files['hdd']);
@@ -424,7 +449,7 @@ while(($line = fgets($files['hdd'])) !== false) {
 	$counter++;
 }
 $files['hdd'] = $counter;
-
+unset($hdd);
 
 $header = fgets($files['odd']);
 $header = explode('|', $header);
@@ -477,6 +502,7 @@ while(($line = fgets($files['odd'])) !== false) {
 	$counter++;
 }
 $files['odd'] = $counter;
+unset($odd);
 
 $header = fgets($files['input']);
 $header = explode('|', $header);
@@ -552,6 +578,7 @@ while(($line = fgets($files['input'])) !== false) {
 	$counter++;
 }
 $files['input'] = $counter;
+unset($in);
 
 $header = fgets($files['cards']);
 $header = explode('|', $header);
@@ -654,6 +681,7 @@ while(($line = fgets($files['cards'])) !== false) {
 	$counter++;
 }
 $files['cards'] = $counter;
+unset($in);
 
 $header = fgets($files['psu']);
 $header = explode('|', $header);
@@ -763,6 +791,7 @@ while(($line = fgets($files['psu'])) !== false) {
 	$counter++;
 }
 $files['psu'] = $counter;
+unset($psu);
 
 $header = fgets($files['fdd']);
 $header = explode('|', $header);
@@ -788,6 +817,57 @@ while(($line = fgets($files['fdd'])) !== false) {
 	$counter++;
 }
 $files['fdd'] = $counter;
+unset($in);
+
+$header = fgets($files['other']);
+$header = explode('|', $header);
+$counter = 0;
+while(($line = fgets($files['other'])) !== false) {
+	$pieces = nuke($line, count($header));
+	if(trim($pieces[0]) === '') {
+		continue;
+	} else {
+		$in = new Item(trim($pieces[0]));
+	}
+
+	$container = false;
+	switch($pieces[1]) {
+		// TODO: finish stuff
+		case 'Mobo':
+			$in->addFeature('type', 'motherboard');
+			$container = true;
+			break;
+		case 'CPU':
+			$in->addFeature('type', 'cpu');
+			break;
+		case 'Switch ethernet':
+			$in->addFeature('type', 'network-switch');
+			break;
+		case 'Hub ethernet':
+			$in->addFeature('type', 'network-hub');
+			break;
+		case 'Stampante':
+			$in->addFeature('type', 'printer');
+			break;
+		case 'Scanner':
+			$in->addFeature('type', 'scanner');
+			break;
+	}
+
+	trim($pieces[2]) === '' ?: $in->addFeature('cib', trim($pieces[2]));
+	$pieces[4] === '' ?: $in->addFeature('brand', $pieces[4]);
+	$pieces[5] === '' ?: $in->addFeature('model', $pieces[5]);
+	working($in, $pieces[6], $line);
+	$pieces[7] === '' ?: colorify($in, $pieces[7], $line);
+	($pieces[9] === '' || $pieces[9] === '-') ?: $in->addFeature('sn', $pieces[9]);
+	$pieces[10] === '' ?: $in->addFeature('notes', trim($pieces[10]));
+	placeinto($in, $pieces[11], $line, $container);
+	$pieces[13] === '' ?: $in->addFeature('owner', trim($pieces[13]));
+
+	$counter++;
+}
+$files['other'] = $counter;
+unset($in);
 
 echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
 print_r($files);
