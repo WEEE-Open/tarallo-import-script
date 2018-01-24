@@ -280,87 +280,87 @@ $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['monitor'])) !== false) {
 	$pieces = nuke($line, count($header));
-	$monitor = new Item(trim($pieces[0]));
-	$monitor->addFeature('type', 'monitor');
-	trim($pieces[1]) === '' ?: $monitor->addFeature('cib', trim($pieces[1]));
-	trim($pieces[2]) === '' ?: $monitor->addFeature('cib-old', trim($pieces[2]));
-	trim($pieces[3]) === '' ?: $monitor->addFeature('other-code', trim($pieces[3]));
-	trim($pieces[4]) === '' ?: $monitor->addFeature('brand', trim($pieces[4]));
-	($pieces[5] === '' || $pieces[5] === '-') ?: $monitor->addFeature('model', trim($pieces[5]));
-	working($monitor, $pieces[6], $line);
-	$pieces[7] === '-' ?: $monitor->addFeature('vga-ports-n', 1);
-	$pieces[8] === '-' ?: $monitor->addFeature('dvi-ports-n', 1);
-	$pieces[9] === '-' ?: ($monitor->addFeature('usb-ports-n', 2) && $monitor->addFeature('check', 'wrong-data') && $check++);
-	$pieces[10] === '-' ?: $monitor->addFeature('hdmi-ports-n', 1);
-	$pieces[11] === '-' ?: $monitor->addFeature('s-video-ports-n', 1);
-	$pieces[12] === '' ?: $monitor->addFeature('notes', trim($pieces[12]));
+	$in = new Item(trim($pieces[0]));
+	$in->addFeature('type', 'monitor');
+	trim($pieces[1]) === '' ?: $in->addFeature('cib', trim($pieces[1]));
+	trim($pieces[2]) === '' ?: $in->addFeature('cib-old', trim($pieces[2]));
+	trim($pieces[3]) === '' ?: $in->addFeature('other-code', trim($pieces[3]));
+	trim($pieces[4]) === '' ?: $in->addFeature('brand', trim($pieces[4]));
+	($pieces[5] === '' || $pieces[5] === '-') ?: $in->addFeature('model', trim($pieces[5]));
+	working($in, $pieces[6], $line);
+	$pieces[7] === '-' ?: $in->addFeature('vga-ports-n', 1);
+	$pieces[8] === '-' ?: $in->addFeature('dvi-ports-n', 1);
+	$pieces[9] === '-' ?: ($in->addFeature('usb-ports-n', 2) && $in->addFeature('check', 'wrong-data') && $check++);
+	$pieces[10] === '-' ?: $in->addFeature('hdmi-ports-n', 1);
+	$pieces[11] === '-' ?: $in->addFeature('s-video-ports-n', 1);
+	$pieces[12] === '' ?: $in->addFeature('notes', trim($pieces[12]));
 	if($pieces[13] !== '') {
 		$power = explode('/', $pieces[13], 2);
 		if(count($power) === 2) {
-			$monitor->addFeature('power-connector', 'barrel');
-			$monitor->addFeature('psu-volt', (int) trim($power[0]));
-			$monitor->addFeature('psu-ampere', (int) trim($power[1]));
+			$in->addFeature('power-connector', 'barrel');
+			$in->addFeature('psu-volt', (int) trim($power[0]));
+			$in->addFeature('psu-ampere', (int) trim($power[1]));
 		} else {
-			$monitor->addFeature('power-connector', 'c13');
+			$in->addFeature('power-connector', 'c13');
 		}
 	}
-	$pieces[14] === '' ?: $monitor->addFeature('sn', trim($pieces[14]));
-	placeinto($monitor, $pieces[15], $line);
+	$pieces[14] === '' ?: $in->addFeature('sn', trim($pieces[14]));
+	placeinto($in, $pieces[15], $line);
 	// TODO: handle "data di carico" (even though they're mostly random)
 	if($pieces[17] === 'AreaIT') {
 		$pieces[17] = 'Area IT';
 	}
-	$pieces[17] === '' ?: own($monitor, trim($pieces[17]), $line);
+	$pieces[17] === '' ?: own($in, trim($pieces[17]), $line);
 	$counter++;
 }
 $files['monitor'] = $counter;
-unset($monitor);
+unset($in);
 
 $header = fgets($files['ram']);
 $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['ram'])) !== false) {
 	$pieces = nuke($line, count($header));
-	$ram = new Item(trim($pieces[0]));
-	$ram->addFeature('type', 'ram');
-	$pieces[1] === '' ?: $ram->addFeature('ram-type', strtolower(trim($pieces[1])));
-	$pieces[2] === '' ?: $ram->addFeature('ram-form-factor', strtolower(trim($pieces[2])));
-	$pieces[3] === '' ?: $ram->addFeature('frequency-hertz', $pieces[3] * 1000000);
-	$pieces[4] === '' ?: $ram->addFeature('capacity-byte', $pieces[4] * 1048576);
-	working($ram, $pieces[5], $line);
+	$in = new Item(trim($pieces[0]));
+	$in->addFeature('type', 'ram');
+	$pieces[1] === '' ?: $in->addFeature('ram-type', strtolower(trim($pieces[1])));
+	$pieces[2] === '' ?: $in->addFeature('ram-form-factor', strtolower(trim($pieces[2])));
+	$pieces[3] === '' ?: $in->addFeature('frequency-hertz', $pieces[3] * 1000000);
+	$pieces[4] === '' ?: $in->addFeature('capacity-byte', $pieces[4] * 1048576);
+	working($in, $pieces[5], $line);
 	if(trim($pieces[6]) !== '') {
 		$pieces[6] = trim($pieces[6]);
 		$subpieces = explode(' ', $pieces[6],2);
 		assert(count($subpieces) > 0);
 		if(count($subpieces) === 1) {
 			if(substr($subpieces[0], 0, 5) === 'VS512') {
-				$ram->addFeature('model', $subpieces[0]);
+				$in->addFeature('model', $subpieces[0]);
 			} else {
-				$ram->addFeature('brand', $subpieces[0]);
+				$in->addFeature('brand', $subpieces[0]);
 			}
 		} else {
-			$ram->addFeature('brand', $subpieces[0]);
-			$ram->addFeature('model', $subpieces[1]);
+			$in->addFeature('brand', $subpieces[0]);
+			$in->addFeature('model', $subpieces[1]);
 		}
 	}
 	$pieces[7] = trim($pieces[7]);
-		$pieces[7] === '' || $pieces[7] === '-' ?: $ram->addFeature('sn', trim($pieces[7]));
+		$pieces[7] === '' || $pieces[7] === '-' ?: $in->addFeature('sn', trim($pieces[7]));
 	if(mb_substr($pieces[7], 0, 3) === '...' || mb_substr($pieces[7], 0, 1) === '…') {
-		$ram->addFeature('check', 'missing-data');
+		$in->addFeature('check', 'missing-data');
 		$check++;
 	}
-	$pieces[8] === '' ?: $ram->addFeature('notes', trim($pieces[8]));
-	placeinto($ram, $pieces[9], $line);
-	$pieces[11] === '' ?: own($ram, trim($pieces[11]), $line);
+	$pieces[8] === '' ?: $in->addFeature('notes', trim($pieces[8]));
+	placeinto($in, $pieces[9], $line);
+	$pieces[11] === '' ?: own($in, trim($pieces[11]), $line);
 
 	if(strtoupper($pieces[9]) === 'EMILIA' || strtoupper($pieces[9]) === 'ROSETTA' || strtoupper($pieces[9]) === 'ROSITA') {
-		$ram->addFeature('ram-ecc', 'yes');
+		$in->addFeature('ram-ecc', 'yes');
 	}
 
 	$counter++;
 }
 $files['ram'] = $counter;
-unset($ram);
+unset($in);
 
 
 $header = fgets($files['hdd']);
@@ -368,48 +368,48 @@ $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['hdd'])) !== false) {
 	$pieces = nuke($line, count($header));
-	$hdd = new Item(trim($pieces[0]));
-	$hdd->addFeature('type', 'hdd');
+	$in = new Item(trim($pieces[0]));
+	$in->addFeature('type', 'hdd');
 
 	if(trim($pieces[0]) === 'HDD2') {
-		$hdd->addFeature('check', 'wrong-data');
+		$in->addFeature('check', 'wrong-data');
 		$check++;
 	}
 
 	if(substr($pieces[11], 0, 5) === 'Perso') {
-		placeinto($hdd, 'Chernobyl', $line);
-		$hdd->addFeature('check', 'wrong-location');
+		placeinto($in, 'Chernobyl', $line);
+		$in->addFeature('check', 'wrong-location');
 		$check++;
 	} else {
-		placeinto($hdd, $pieces[11], $line);
+		placeinto($in, $pieces[11], $line);
 	}
 
 	switch(trim($pieces[1])) {
 		case 'IDE':
-			$hdd->addFeature('ide-ports-n', 1);
-			$hdd->addFeature('hdd-odd-form-factor', '3.5');
+			$in->addFeature('ide-ports-n', 1);
+			$in->addFeature('hdd-odd-form-factor', '3.5');
 			break;
 		case 'SATA':
-			$hdd->addFeature('sata-ports-n', 1);
-			$hdd->addFeature('hdd-odd-form-factor', '3.5');
+			$in->addFeature('sata-ports-n', 1);
+			$in->addFeature('hdd-odd-form-factor', '3.5');
 			break;
 		case 'SATA (slim)':
-			$hdd->addFeature('sata-ports-n', 1);
-			$hdd->addFeature('hdd-odd-form-factor', '2.5-9.5mm');
+			$in->addFeature('sata-ports-n', 1);
+			$in->addFeature('hdd-odd-form-factor', '2.5-9.5mm');
 			break;
 		case 'MiniIDE':
-			$hdd->addFeature('mini-ide-ports-n', 1);
-			$hdd->addFeature('hdd-odd-form-factor', '2.5-9.5mm');
+			$in->addFeature('mini-ide-ports-n', 1);
+			$in->addFeature('hdd-odd-form-factor', '2.5-9.5mm');
 			break;
 		case 'SCSI DB68':
-			$hdd->addFeature('scsi-db68-ports-n', 1);
-			$hdd->addFeature('hdd-odd-form-factor', '3.5');
-			array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'wrong-location') && $check++);
+			$in->addFeature('scsi-db68-ports-n', 1);
+			$in->addFeature('hdd-odd-form-factor', '3.5');
+			array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature('check', 'wrong-location') && $check++);
 			break;
 		case 'SCSI':
-			$hdd->addFeature('scsi-sca2-ports-n', 1);
-			$hdd->addFeature('hdd-odd-form-factor', '3.5');
-			array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'wrong-data') && $check++);
+			$in->addFeature('scsi-sca2-ports-n', 1);
+			$in->addFeature('hdd-odd-form-factor', '3.5');
+			array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature('check', 'wrong-data') && $check++);
 			break;
 		default:
 			stop('Unknown connector type', $line);
@@ -424,15 +424,15 @@ while(($line = fgets($files['hdd'])) !== false) {
 		}
 
 		if(count($subpieces) === 1) {
-			$hdd->addFeature('brand', $subpieces[0]);
+			$in->addFeature('brand', $subpieces[0]);
 		} else {
-			$hdd->addFeature('brand', $subpieces[0]);
-			$hdd->addFeature('model', $subpieces[1]);
+			$in->addFeature('brand', $subpieces[0]);
+			$in->addFeature('model', $subpieces[1]);
 		}
 	}
 
 	if($pieces[3] === '') {
-		array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'missing-data') && $check++);
+		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature('check', 'missing-data') && $check++);
 	} else {
 		$thing = trim($pieces[3]);
 		if(strpos($thing, ',') > -1) {
@@ -441,30 +441,30 @@ while(($line = fgets($files['hdd'])) !== false) {
 		} else {
 			$size = trim($pieces[3]) * 1000000000;
 		}
-		$hdd->addFeature('capacity-decibyte', $size);
+		$in->addFeature('capacity-decibyte', $size);
 	}
 
-	$pieces[4] === '' ?: $hdd->addFeature('spin-rate-rpm', (int) $pieces[4]);
+	$pieces[4] === '' ?: $in->addFeature('spin-rate-rpm', (int) $pieces[4]);
 
 	if($pieces[5] === '') {
-		array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'missing-data') && $check++);
+		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature('check', 'missing-data') && $check++);
 	} else {
-		$hdd->addFeature('sn', $pieces[5]);
+		$in->addFeature('sn', $pieces[5]);
 	}
 
-	working($hdd, $pieces[6], $line);
+	working($in, $pieces[6], $line);
 
 	if($pieces[7] !== '' && $pieces[7] !== 'no') {
-		$hdd->addFeature('data-erased', 'yes');
+		$in->addFeature('data-erased', 'yes');
 	}
 
 	if($pieces[8] !== '') {
 		switch(trim($pieces[8])) {
 			case 'ok':
-				$hdd->addFeature('surface-scan', 'pass');
+				$in->addFeature('surface-scan', 'pass');
 				break;
 			case 'no':
-				$hdd->addFeature('surface-scan', 'fail');
+				$in->addFeature('surface-scan', 'fail');
 				break;
 			default:
 				stop('Unknown badblocks value', $line);
@@ -474,49 +474,49 @@ while(($line = fgets($files['hdd'])) !== false) {
 	if($pieces[9] !== '') {
 		switch(trim($pieces[9])) {
 			case 'ok':
-				$hdd->addFeature('smart-data', 'ok');
+				$in->addFeature('smart-data', 'ok');
 				break;
 			case 'no':
-				$hdd->addFeature('smart-data', 'fail');
+				$in->addFeature('smart-data', 'fail');
 				break;
 			case 'ni':
-				$hdd->addFeature('smart-data', 'old');
+				$in->addFeature('smart-data', 'old');
 				break;
 			default:
 				stop('Unknown S.M.A.R.T. status value', $line);
 		}
 	}
 
-	$pieces[10] === '' ?: $hdd->addFeature('notes', trim($pieces[10]));
-	$pieces[13] === '' ?: own($hdd, trim($pieces[13]), $line);
+	$pieces[10] === '' ?: $in->addFeature('notes', trim($pieces[10]));
+	$pieces[13] === '' ?: own($in, trim($pieces[13]), $line);
 	$counter++;
 }
 $files['hdd'] = $counter;
-unset($hdd);
+unset($in);
 
 $header = fgets($files['odd']);
 $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['odd'])) !== false) {
 	$pieces = nuke($line, count($header));
-	$odd = new Item(trim($pieces[0]));
-	$odd->addFeature('type', 'odd');
+	$in = new Item(trim($pieces[0]));
+	$in->addFeature('type', 'odd');
 
 	switch(trim($pieces[1])) {
 		case 'IDE':
-			$odd->addFeature('ide-ports-n', 1);
-			$odd->addFeature('hdd-odd-form-factor', '5.25');
+			$in->addFeature('ide-ports-n', 1);
+			$in->addFeature('hdd-odd-form-factor', '5.25');
 			break;
 		case 'SATA':
-			$odd->addFeature('sata-ports-n', 1);
-			$odd->addFeature('hdd-odd-form-factor', '5.25');
+			$in->addFeature('sata-ports-n', 1);
+			$in->addFeature('hdd-odd-form-factor', '5.25');
 			break;
 		case 'SATA (slim)':
-			$odd->addFeature('sata-ports-n', 1);
-			$odd->addFeature('hdd-odd-form-factor', 'laptop-odd-standard');
+			$in->addFeature('sata-ports-n', 1);
+			$in->addFeature('hdd-odd-form-factor', 'laptop-odd-standard');
 			break;
 		case 'Proprietario':
-			$odd->addFeature('hdd-odd-form-factor', 'laptop-odd-standard');
+			$in->addFeature('hdd-odd-form-factor', 'laptop-odd-standard');
 			break;
 		default:
 			stop('Unknown connector type', $line);
@@ -526,33 +526,33 @@ while(($line = fgets($files['odd'])) !== false) {
 		$type = strtolower(trim($pieces[2])) . '-' . strtolower(trim($pieces[3]));
 		$subpieces = explode(' ', $pieces[2],2);
 		assert(count($subpieces) > 0);
-		$odd->addFeature('odd-type', $type);
+		$in->addFeature('odd-type', $type);
 	} else {
-		array_key_exists('check', $odd->getFeatures()) ?: ($odd->addFeature('check', 'missing-data') && $check++);
+		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature('check', 'missing-data') && $check++);
 	}
 
 
-	$pieces[4] === '' ?: $odd->addFeature('brand', $pieces[4]);
-	$pieces[5] === '' ?: $odd->addFeature('model', $pieces[5]);
-	working($odd, $pieces[6], $line);
+	$pieces[4] === '' ?: $in->addFeature('brand', $pieces[4]);
+	$pieces[5] === '' ?: $in->addFeature('model', $pieces[5]);
+	working($in, $pieces[6], $line);
 
 
 	if($pieces[7] === '') {
-		array_key_exists('check', $odd->getFeatures()) ?: ($odd->addFeature('check', 'missing-data') && $check++);
+		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature('check', 'missing-data') && $check++);
 	} else {
 		if($pieces[7] !== '-') {
-			$odd->addFeature('sn', $pieces[7]);
+			$in->addFeature('sn', $pieces[7]);
 		}
 	}
 
-	$pieces[8] === '' ?: $odd->addFeature('notes', trim($pieces[8]));
-	$pieces[9] === '' ?: colorify($odd, $pieces[9], $line);
-	$pieces[12] === '' ?: own($odd, trim($pieces[12]), $line);
-	placeinto($odd, $pieces[10], $line);
+	$pieces[8] === '' ?: $in->addFeature('notes', trim($pieces[8]));
+	$pieces[9] === '' ?: colorify($in, $pieces[9], $line);
+	$pieces[12] === '' ?: own($in, trim($pieces[12]), $line);
+	placeinto($in, $pieces[10], $line);
 	$counter++;
 }
 $files['odd'] = $counter;
-unset($odd);
+unset($in);
 
 $header = fgets($files['input']);
 $header = explode('|', $header);
@@ -740,49 +740,49 @@ while(($line = fgets($files['psu'])) !== false) {
 	$pieces = nuke($line, count($header));
 
 	$missing = false;
-	$psu = new Item(trim($pieces[0]));
+	$in = new Item(trim($pieces[0]));
 
-	if($psu->getCode() === 'A64') {
-		$psu->addFeature('color', 'golden');
+	if($in->getCode() === 'A64') {
+		$in->addFeature('color', 'golden');
 	}
 
 	if(trim($pieces[1]) === '-' || $pieces[4] === 'Dell DA-2') {
-		$psu->addFeature('type', 'external-psu');
-		$pieces[2] === '' ? $missing = true : $psu->addFeature('psu-volt', (int) $pieces[2]);
-		$pieces[3] === '' ? $missing = true : $psu->addFeature('psu-ampere', (int) $pieces[3]); // sometimes these are fractional, but that isn't representable in database right now...
+		$in->addFeature('type', 'external-psu');
+		$pieces[2] === '' ? $missing = true : $in->addFeature('psu-volt', (int) $pieces[2]);
+		$pieces[3] === '' ? $missing = true : $in->addFeature('psu-ampere', (int) $pieces[3]); // sometimes these are fractional, but that isn't representable in database right now...
 		if(trim($pieces[4]) === '?') {
 			$missing = true;
 		} else {
 			switch(trim($pieces[4])) {
 				case 'Barrel':
-					$psu->addFeature('power-connector', 'barrel');
+					$in->addFeature('power-connector', 'barrel');
 					break;
 				case 'Mini USB':
-					$psu->addFeature('power-connector', 'miniusb');
+					$in->addFeature('power-connector', 'miniusb');
 					break;
 				case 'Proprietario':
-					$psu->addFeature('power-connector', 'proprietary');
+					$in->addFeature('power-connector', 'proprietary');
 					break;
 				case 'Dell DA-2':
-					$psu->addFeature('power-connector', 'da-2');
+					$in->addFeature('power-connector', 'da-2');
 					break;
 				default:
 					stop('Uknown external PSU type: ' . $pieces[4], $line);
 			}
 		}
 	} else {
-		$psu->addFeature('type', 'psu');
-		$psu->addFeature('power-connector', 'c13');
-		$pieces[1] === '?' ? $missing = true : $psu->addFeature('power-rated-watt', (int) $pieces[1]);
+		$in->addFeature('type', 'psu');
+		$in->addFeature('power-connector', 'c13');
+		$pieces[1] === '?' ? $missing = true : $in->addFeature('power-rated-watt', (int) $pieces[1]);
 		if($pieces[6] === '-') {
 			stop('SATA port number set to "not applicable" for internal PSU', $line);
 		} else {
-			$pieces[6] === '' ? $missing = true : $psu->addFeature('sata-ports-n', (int) $pieces[6]);
+			$pieces[6] === '' ? $missing = true : $in->addFeature('sata-ports-n', (int) $pieces[6]);
 		}
 		if(trim($pieces[5]) === '-') {
 			stop('PCIe power pins set to "not applicable" for internal PSU', $line);
 		} else {
-			trim($pieces[5]) === '' ? $missing = true : $psu->addFeature('pcie-power-pin-n', (int) trim($pieces[5]));
+			trim($pieces[5]) === '' ? $missing = true : $in->addFeature('pcie-power-pin-n', (int) trim($pieces[5]));
 		}
 		if(trim($pieces[4]) === '?') {
 			$missing = true;
@@ -791,28 +791,28 @@ while(($line = fgets($files['psu'])) !== false) {
 				case 'ATX12V + 4 pin':
 				case 'CFX12V + 4 pin':
 				case 'LFX12V + 4 pin':
-					$psu->addFeature('psu-socket', 'atx12v-4pin');
+					$in->addFeature('psu-socket', 'atx12v-4pin');
 					break;
 				case 'ATX12V + 8 pin':
-					$psu->addFeature('psu-socket', 'atx12v-8pin');
+					$in->addFeature('psu-socket', 'atx12v-8pin');
 					break;
 				case 'ATX12V':
-					$psu->addFeature('psu-socket', 'atx12v');
+					$in->addFeature('psu-socket', 'atx12v');
 					break;
 				default:
 					stop('Uknown internal PSU type: ' . $pieces[4], $line);
 			}
 			switch(trim($pieces[4])) {
 				case 'CFX12V + 4 pin':
-					$psu->addFeature('psu-form-factor', 'cfx');
+					$in->addFeature('psu-form-factor', 'cfx');
 					break;
 				case 'LFX12V + 4 pin':
-					$psu->addFeature('psu-form-factor', 'lfx');
+					$in->addFeature('psu-form-factor', 'lfx');
 					break;
 				case 'ATX12V':
 				case 'ATX12V + 4 pin':
 				case 'ATX12V + 8 pin':
-					$psu->addFeature('psu-form-factor', 'atx');
+					$in->addFeature('psu-form-factor', 'atx');
 					break;
 				default:
 					stop('Uknown internal PSU type (again): ' . $pieces[4], $line);
@@ -820,20 +820,20 @@ while(($line = fgets($files['psu'])) !== false) {
 		}
 	}
 
-	$pieces[7] === '' ?: $psu->addFeature('brand', $pieces[7]);
-	$pieces[8] === '' ?: $psu->addFeature('brand-reseller', $pieces[8]);
-	$pieces[9] === '' ?: $psu->addFeature('model', $pieces[9]);
-	working($psu, $pieces[10], $line);
-	($pieces[11] === '' || $pieces[11] === '-') ?: $psu->addFeature('sn', $pieces[11]);
-	$pieces[12] === '' ?: $psu->addFeature('notes', trim($pieces[12]));
-	placeinto($psu, $pieces[13], $line);
-	$pieces[15] === '' ?: own($psu, trim($pieces[15]), $line);
+	$pieces[7] === '' ?: $in->addFeature('brand', $pieces[7]);
+	$pieces[8] === '' ?: $in->addFeature('brand-reseller', $pieces[8]);
+	$pieces[9] === '' ?: $in->addFeature('model', $pieces[9]);
+	working($in, $pieces[10], $line);
+	($pieces[11] === '' || $pieces[11] === '-') ?: $in->addFeature('sn', $pieces[11]);
+	$pieces[12] === '' ?: $in->addFeature('notes', trim($pieces[12]));
+	placeinto($in, $pieces[13], $line);
+	$pieces[15] === '' ?: own($in, trim($pieces[15]), $line);
 
 	if($missing) {
 		if($pieces[13] === 'Perso') {
-			$psu->addFeature('check', 'wrong-location-and-data');
+			$in->addFeature('check', 'wrong-location-and-data');
 		} else {
-			$psu->addFeature('check', 'missing-data');
+			$in->addFeature('check', 'missing-data');
 		}
 		$check++;
 	}
@@ -841,7 +841,7 @@ while(($line = fgets($files['psu'])) !== false) {
 	$counter++;
 }
 $files['psu'] = $counter;
-unset($psu);
+unset($in);
 
 $header = fgets($files['fdd']);
 $header = explode('|', $header);
