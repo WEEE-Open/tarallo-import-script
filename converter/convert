@@ -353,19 +353,28 @@ while(($line = fgets($files['hdd'])) !== false) {
 	switch(trim($pieces[1])) {
 		case 'IDE':
 			$hdd->addFeature('ide-ports-n', 1);
+			$hdd->addFeature('hdd-odd-form-factor', '3.5');
 			break;
 		case 'SATA':
 			$hdd->addFeature('sata-ports-n', 1);
+			$hdd->addFeature('hdd-odd-form-factor', '3.5');
+			break;
+		case 'SATA (slim)':
+			$hdd->addFeature('sata-ports-n', 1);
+			$hdd->addFeature('hdd-odd-form-factor', '2.5-9.5mm');
 			break;
 		case 'MiniIDE':
 			$hdd->addFeature('mini-ide-ports-n', 1);
+			$hdd->addFeature('hdd-odd-form-factor', '2.5-9.5mm');
 			break;
 		case 'SCSI DB68':
 			$hdd->addFeature('scsi-db68-ports-n', 1);
+			$hdd->addFeature('hdd-odd-form-factor', '3.5');
 			array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'wrong-location') && $check++);
 			break;
 		case 'SCSI':
 			$hdd->addFeature('scsi-sca2-ports-n', 1);
+			$hdd->addFeature('hdd-odd-form-factor', '3.5');
 			array_key_exists('check', $hdd->getFeatures()) ?: ($hdd->addFeature('check', 'wrong-data') && $check++);
 			break;
 		default:
@@ -462,11 +471,18 @@ while(($line = fgets($files['odd'])) !== false) {
 	switch(trim($pieces[1])) {
 		case 'IDE':
 			$odd->addFeature('ide-ports-n', 1);
+			$odd->addFeature('hdd-odd-form-factor', '5.25');
 			break;
 		case 'SATA':
 			$odd->addFeature('sata-ports-n', 1);
+			$odd->addFeature('hdd-odd-form-factor', '5.25');
+			break;
+		case 'SATA (slim)':
+			$odd->addFeature('sata-ports-n', 1);
+			$odd->addFeature('hdd-odd-form-factor', 'laptop-odd-standard');
 			break;
 		case 'Proprietario':
+			$odd->addFeature('hdd-odd-form-factor', 'laptop-odd-standard');
 			break;
 		default:
 			stop('Unknown connector type', $line);
