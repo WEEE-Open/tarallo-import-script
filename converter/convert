@@ -420,31 +420,39 @@ while(($line = fgets($files['case'])) !== false) {
 			switch(trim($pieces[30])) {
 				case 'LGA775':
 					$cpu->addFeature('cpu-socket', 'lga775');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'lga775');
 					break;
 				case '478':
 					$cpu->addFeature('cpu-socket', 'socket478');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'socket478');
 					break;
 				case 'PGA478':
 				case '479':
 					$cpu->addFeature('cpu-socket', 'socket479');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'socket479');
 					break;
 				case '462 (A)':
 					$cpu->addFeature('cpu-socket', 'socket462a');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'socket462a');
 					break;
 				case 'Soldered':
 					$cpu->addFeature('soldered-in-place', 'yes');
 					break;
 				case 'LGA1155':
 					$cpu->addFeature('cpu-socket', 'lga1155');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'lga1155');
 					break;
 				case 'LGA771':
 					$cpu->addFeature('cpu-socket', 'lga771');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'lga771');
 					break;
 				case 'LGA1366':
 					$cpu->addFeature('cpu-socket', 'lga1366');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'lga1366');
 					break;
 				case 'Socket P':
 					$cpu->addFeature('cpu-socket', 'p');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'p');
 					break;
 				default:
 					stop('Unknown socket: ' . trim($pieces[30]), $line);
