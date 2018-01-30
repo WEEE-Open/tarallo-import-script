@@ -112,42 +112,10 @@ $polito->addContent($chernobyl)->addContent($mrf);
 $chernobyl->addContent($armadiol)->addContent($armadior)->addContent($armadios)->addContent($armadiod)->addContent($tavolo)->addContent($groot)->addContent($rotonda)->addContent($zonablu)->addContent($zonarossa)->addContent($zonaground)->addContent($davanzale);
 $armadior->addContent($scatolaRAM);
 $tavolo->addContent($sottoaltavolo);
-$otherContainers = []; // Motherboards "contain" RAM sticks and CPUs
-
-// For testing only
-$case = [];
-for($i = 1; $i < 95; $i++) {
-	$code = (string) $i;
-	$case[$code] = (new Item($code))->addFeature('type', 'case');
-	switch($i % 3) {
-		case 0:
-			$zonablu->addContent($case[$code]);
-			break;
-		case 1:
-			$zonarossa->addContent($case[$code]);
-			break;
-		case 2:
-			$zonaground->addContent($case[$code]);
-			break;
-	}
-}
-$case['D1'] = $zonablu->addContent((new Item('D1'))->addFeature('type', 'case'));
-$case['D2'] = $zonablu->addContent((new Item('D2'))->addFeature('type', 'case'));
-$case['D3'] = $zonablu->addContent((new Item('D3'))->addFeature('type', 'case'));
-$case['D4'] = $zonablu->addContent((new Item('D4'))->addFeature('type', 'case'));
-$case['D5'] = $zonablu->addContent((new Item('D5'))->addFeature('type', 'case'));
-$case['D6'] = $zonablu->addContent((new Item('D6'))->addFeature('type', 'case'));
-$case['D7'] = $zonablu->addContent((new Item('D7'))->addFeature('type', 'case'));
-$case['D8'] = $zonablu->addContent((new Item('D8'))->addFeature('type', 'case'));
-$case['D9'] = $zonablu->addContent((new Item('D9'))->addFeature('type', 'case'));
-$case['EMILIA'] = $zonablu->addContent((new Item('EMILIA'))->addFeature('type', 'case'));
-$case['ROSETTA'] = $zonablu->addContent((new Item('ROSETTA'))->addFeature('type', 'case'));
-$case['ROSITA'] = $zonablu->addContent((new Item('ROSITA'))->addFeature('type', 'case'));
-$case['Gesoo'] = $zonablu->addContent((new Item('Gesoo'))->addFeature('type', 'case'));
-$case['SCHIFOMACCHINA'] = $tavolo->addContent((new Item('Schifomacchina'))->addFeature('type', 'case'));
+$otherContainers = []; // Cases contain every kind of item, motherboards "contain" RAM sticks and CPUs
 
 function placeinto(Item $item, $parent, $line, $container = false) {
-	global $case, $otherContainers;
+	global $otherContainers;
 	if($container) {
 		if(isset($container[$item->getCode()])) {
 			stop('Duplicate code', $line);
@@ -211,11 +179,6 @@ function placeinto(Item $item, $parent, $line, $container = false) {
 		return;
 	}
 	$parent = trim($parent);
-	if(isset($case[$parent])) {
-		/** @noinspection PhpUndefinedMethodInspection */
-		$case[$parent]->addContent($item);
-		return;
-	}
 	if(isset($otherContainers[$parent])) {
 		/** @noinspection PhpUndefinedMethodInspection */
 		$otherContainers[$parent]->addContent($item);
@@ -262,7 +225,7 @@ function colorify(Item $item, $color, $line) {
 	stop('Unknown color: ' . $color, $line);
 }
 
-$files = ['monitor', 'ram', 'hdd', 'odd', 'input', 'cards', 'psu', 'fdd', 'other'];
+$files = ['case', 'monitor', 'ram', 'hdd', 'odd', 'input', 'cards', 'psu', 'fdd', 'other'];
 $files = array_flip($files);
 foreach($files as $file => $useless) {
 	$handle = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . $file . '.csv', "r");
@@ -273,9 +236,137 @@ foreach($files as $file => $useless) {
 	$files[$file] = $handle;
 }
 
-$header = fgets($files['monitor']);
+$cpuid = 0;
+$moboid = 0;
+
+$header = fgets($files['case']);
 $header = explode('|', $header);
 // Whatever, it's not really needed...
+
+$counter = 0;
+while(($line = fgets($files['case'])) !== false) {
+	$pieces = nuke($line, count($header));
+	$in = new Item(trim($pieces[0]));
+	$otherContainers[$in->getCode()] = $in;
+
+	trim($pieces[1]) === '' ?: $in->addFeature('cib', trim($pieces[1]));
+	trim($pieces[2]) === '' ?: $in->addFeature('cib-old', trim($pieces[2]));
+	trim($pieces[3]) === '' ?: $in->addFeature('other-code', trim($pieces[3]));
+	trim($pieces[4]) === '' ?: $in->addFeature('os-serial-version', trim($pieces[4]));
+	trim($pieces[5]) === '' ?: $in->addFeature('os-serial-code', trim($pieces[5]));
+	trim($pieces[6]) === '' ?: $in->addFeature('brand', trim($pieces[6]));
+	trim($pieces[7]) === '' ?: $in->addFeature('model', trim($pieces[7]));
+	trim($pieces[8]) === '' ?: $in->addFeature('usb-ports-n', trim($pieces[8]));
+	working($in, $pieces[9], $line);
+
+	$mobo = new Item('B' . ++$moboid);
+	$otherContainers[$mobo->getCode()] = $mobo;
+	$mobo->addFeature('type', 'motherboard');
+	$in->addContent($mobo);
+
+	trim($pieces[10]) === '' ?: $mobo->addFeature('brand', trim($pieces[10]));
+	trim($pieces[11]) === '' ?: $mobo->addFeature('model', trim($pieces[11]));
+	trim($pieces[12]) === '' ?: $mobo->addFeature('sn', trim($pieces[12]));
+
+	$ports = [
+		13 => 'agp-sockets-n',
+		14 => 'pci-sockets-n',
+		15 => 'pcie-sockets-n',
+		16 => 'sata-ports-n',
+		17 => 'ide-ports-n',
+		18 => 'vga-ports-n',
+		19 => 'dvi-ports-n',
+		21 => 'serial-ports-n',
+		22 => 'parallel-ports-n',
+		23 => 'usb-ports-n',
+		24 => 'firewire-ports-n',
+	];
+
+	$hasports = false;
+	foreach($ports as $pos => $type) {
+		if($pieces[$pos] !== '' && $pieces[$pos] !== '0') {
+			if($type === 'pcie-ports-n' && $pieces[$pos] === 'mini') {
+				$mobo->addFeature('mini-pcie-sockets-n', 1);
+			} else {
+				$mobo->addFeature($type, (int) $pieces[$pos]);
+			}
+		}
+	}
+	if(!$hasports) {
+		$mobo->addFeature('check', 'missing-data');
+	}
+	if($pieces[20] !== '') {
+		switch((int) $pieces[20]) {
+			case 1000:
+				$mobo->addFeature('ethernet-ports-1000m-n', '1');
+				break;
+			case 100:
+				$mobo->addFeature('ethernet-ports-100m-n', '1');
+				break;
+			case 10:
+				$mobo->addFeature('ethernet-ports-10m-n', '1');
+				break;
+			default:
+				stop("Unknown ethernet speed: " . $pieces[20], $line);
+		}
+	}
+	switch($pieces[25]) {
+		case '?':
+			$in->addFeature('check', 'missing-data');
+			break;
+		case 'Proprietaria':
+			$f = 'proprietary';
+			$mobo->addFeature('motherboard-form-factor', $f);
+			$in->addFeature('motherboard-form-factor', $f);
+			break;
+		case 'ATX':
+			$f = 'atx';
+			$mobo->addFeature('motherboard-form-factor', $f);
+			$in->addFeature('motherboard-form-factor', $f);
+			break;
+		case 'Portatile':
+			$f = 'proprietary-laptop';
+			$mobo->addFeature('motherboard-form-factor', $f);
+			$in->addFeature('motherboard-form-factor', $f);
+			break;
+		case 'EATX':
+			$f = 'eatx';
+			$mobo->addFeature('motherboard-form-factor', $f);
+			$in->addFeature('motherboard-form-factor', $f);
+			break;
+		case 'MiniATX':
+			$f = 'miniatx';
+			$mobo->addFeature('motherboard-form-factor', $f);
+			$in->addFeature('motherboard-form-factor', $f);
+			break;
+		case 'MicroATX':
+			$f = 'microatx';
+			$mobo->addFeature('motherboard-form-factor', $f);
+			$in->addFeature('motherboard-form-factor', $f);
+			break;
+		case 'MiniITX':
+			$f = 'miniitx';
+			$mobo->addFeature('motherboard-form-factor', $f);
+			$in->addFeature('motherboard-form-factor', $f);
+			break;
+		default:
+			stop("Unknown motheboard form factor:" . $pieces[25], $line);
+	}
+	working($mobo, $pieces[26], $line);
+
+
+
+	$pieces[5] === '' ?: $in->addFeature('notes', trim($pieces[5]));
+	placeinto($in, $pieces[6], $line);
+	$pieces[8] === '' ?: own($in, trim($pieces[8]), $line);
+
+	$counter++;
+}
+$files['case'] = $counter;
+unset($in);
+
+$header = fgets($files['monitor']);
+$header = explode('|', $header);
 
 $counter = 0;
 while(($line = fgets($files['monitor'])) !== false) {
