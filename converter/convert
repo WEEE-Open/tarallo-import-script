@@ -102,7 +102,7 @@ $scatolaRAM = (new Item('BrokenRamBox'))->addFeature('type', 'location');
 $tavolo = (new Item('Tavolo'))->addFeature('type', 'location');
 $groot = (new Item('Groot'))->addFeature('type', 'location');
 $rotonda = (new Item('Rotonda'))->addFeature('type', 'location');
-$sottoaltavolo = (new Item('UnderTable'))->addFeature('type', 'location');
+$sottoiltavolo = $sottoaltavolo = (new Item('UnderTable'))->addFeature('type', 'location');
 $zonablu = (new Item('ZonaBlu'))->addFeature('type', 'location');
 $zonarossa = (new Item('ZonaRossa'))->addFeature('type', 'location');
 $zonaground = (new Item('ZonaGround'))->addFeature('type', 'location');
@@ -113,6 +113,10 @@ $chernobyl->addContent($armadiol)->addContent($armadior)->addContent($armadios)-
 $armadior->addContent($scatolaRAM);
 $tavolo->addContent($sottoaltavolo);
 $otherContainers = []; // Cases contain every kind of item, motherboards "contain" RAM sticks and CPUs
+
+// TODO: remove later
+$otherContainers['93'] = (new Item('93'))->addFeature('type', 'case');
+$chernobyl->addContent($otherContainers['93']);
 
 function placeinto(Item $item, $parent, $line, $container = false) {
 	global $otherContainers;
@@ -135,6 +139,8 @@ function placeinto(Item $item, $parent, $line, $container = false) {
 		case 'armadios':
 		case 'armadiod':
 		case 'chernobyl':
+		case 'sottoiltavolo':
+		case 'sottoaltavolo':
 			global $$where;
 			/** @noinspection PhpUndefinedMethodInspection */
 			$$where->addContent($item);
@@ -238,7 +244,10 @@ foreach($files as $file => $useless) {
 
 $cpuid = 0;
 $moboid = 0;
+$gpuid = 100;
 
+$discard = fgets($files['case']);
+unset($discard);
 $header = fgets($files['case']);
 $header = explode('|', $header);
 // Whatever, it's not really needed...
@@ -246,6 +255,11 @@ $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['case'])) !== false) {
 	$pieces = nuke($line, count($header));
+
+	if(substr(trim($pieces[0]), 0,1) === '(') {
+		continue;
+	}
+
 	$in = new Item(trim($pieces[0]));
 	$otherContainers[$in->getCode()] = $in;
 
@@ -263,6 +277,7 @@ while(($line = fgets($files['case'])) !== false) {
 	$otherContainers[$mobo->getCode()] = $mobo;
 	$mobo->addFeature('type', 'motherboard');
 	$in->addContent($mobo);
+	$counter++;
 
 	trim($pieces[10]) === '' ?: $mobo->addFeature('brand', trim($pieces[10]));
 	trim($pieces[11]) === '' ?: $mobo->addFeature('model', trim($pieces[11]));
@@ -294,16 +309,20 @@ while(($line = fgets($files['case'])) !== false) {
 	}
 	if(!$hasports) {
 		$mobo->addFeature('check', 'missing-data');
+		$check++;
 	}
 	if($pieces[20] !== '') {
-		switch((int) $pieces[20]) {
-			case 1000:
+		switch((string) $pieces[20]) {
+			case '1000':
 				$mobo->addFeature('ethernet-ports-1000m-n', '1');
 				break;
-			case 100:
+			case '2x1000':
+				$mobo->addFeature('ethernet-ports-1000m-n', '2');
+				break;
+			case '100':
 				$mobo->addFeature('ethernet-ports-100m-n', '1');
 				break;
-			case 10:
+			case '10':
 				$mobo->addFeature('ethernet-ports-10m-n', '1');
 				break;
 			default:
@@ -313,6 +332,7 @@ while(($line = fgets($files['case'])) !== false) {
 	switch($pieces[25]) {
 		case '?':
 			$in->addFeature('check', 'missing-data');
+			$check++;
 			break;
 		case 'Proprietaria':
 			$f = 'proprietary';
@@ -354,11 +374,138 @@ while(($line = fgets($files['case'])) !== false) {
 	}
 	working($mobo, $pieces[26], $line);
 
+	// Go back for a moment...
+	if($pieces[11] === '0MM621') {
+		$in->addFeature('power-connector', 'da-2');
+	} else if($pieces[25] === 'Portatile') {
+		$in->addFeature('power-connector', 'barrel');
+	}
+	// Ok, now go ahead
 
+	if(substr($pieces[27], 0, 1) === '2') {
+		$ncpu = 2;
+	} else {
+		$ncpu = 1;
+	}
+	for($i = 0; $i < $ncpu; $i++) {
+		$cpu = new Item('C' . ++ $cpuid);
+		$otherContainers[$cpu->getCode()] = $cpu;
+		$cpu->addFeature('type', 'cpu');
+		$mobo->addContent($cpu);
+		$counter++;
 
-	$pieces[5] === '' ?: $in->addFeature('notes', trim($pieces[5]));
-	placeinto($in, $pieces[6], $line);
-	$pieces[8] === '' ?: own($in, trim($pieces[8]), $line);
+		switch(trim($pieces[27])) {
+			case 'Intel':
+			case '2x Intel':
+				$cpu->addFeature('brand', 'Intel');
+				break;
+			case '':
+			case '?':
+				break;
+			default:
+				$cpu->addFeature('brand', trim($pieces[27]));
+		}
+		trim($pieces[28]) === '' ?: $cpu->addFeature('model', trim($pieces[28]));
+
+		$missing = false;
+		$notes = '';
+		if(trim($pieces[29]) !== '') {
+			$freq = (int) (((double) trim($pieces[29])) * 1000000);
+			$cpu->addFeature('frequency-hertz', $freq);
+		} else {
+			$missing = true;
+			$notes .= 'Frequenza?';
+		}
+		if(trim($pieces[30]) !== '') {
+			switch(trim($pieces[30])) {
+				case 'LGA775':
+					$cpu->addFeature('cpu-socket', 'lga775');
+					break;
+				case '478':
+					$cpu->addFeature('cpu-socket', 'socket478');
+					break;
+				case 'PGA478':
+				case '479':
+					$cpu->addFeature('cpu-socket', 'socket479');
+					break;
+				case '462 (A)':
+					$cpu->addFeature('cpu-socket', 'socket462a');
+					break;
+				case 'Soldered':
+					$cpu->addFeature('soldered-in-place', 'yes');
+					break;
+				case 'LGA1155':
+					$cpu->addFeature('cpu-socket', 'lga1155');
+					break;
+				case 'LGA771':
+					$cpu->addFeature('cpu-socket', 'lga771');
+					break;
+				case 'LGA1366':
+					$cpu->addFeature('cpu-socket', 'lga1366');
+					break;
+				case 'Socket P':
+					$cpu->addFeature('cpu-socket', 'p');
+					break;
+				default:
+					stop('Unknown socket: ' . trim($pieces[30]), $line);
+			}
+		} else {
+			$missing = true;
+			$notes .= 'Socket?';
+		}
+		if($missing) {
+			$cpu->addFeature('check', 'missing-data')->addFeature('notes', $notes);
+			$check++;
+		}
+	}
+	working($cpu, $pieces[31], $line);
+
+	switch($pieces[33]) {
+		case 'Integrata (mobo)':
+			$gpu = new Item('SG' . ++$gpuid);
+			$gpu->addFeature('soldered-in-place', 'yes');
+			$gpu->addFeature('type', 'graphics-card');
+			$gpu->addFeature('brand', trim($pieces[34]));
+			$gpu->addFeature('model', trim($pieces[35]));
+			$mobo->addContent($gpu);
+			$counter++;
+			break;
+		case 'Integrata (CPU)':
+			$gpu = new Item('SG' . ++$gpuid);
+			$gpu->addFeature('soldered-in-place', 'yes');
+			$gpu->addFeature('type', 'graphics-card');
+			$gpu->addFeature('brand', trim($pieces[34]));
+			$gpu->addFeature('model', trim($pieces[35]));
+			$cpu->addContent($gpu);
+			break;
+		case '':
+			break;
+		default:
+			if(substr($pieces[33], 0, 2) !== 'SG') {
+				//echo 'Warning: integrated graphics incompletely inventoried, value: ' . $pieces[33].PHP_EOL;
+				// TODO: turn into a stop()
+			}
+	}
+
+	trim($pieces[39]) === '' ?: $in->addFeature('notes', trim($pieces[39]));
+
+	if(trim($pieces[40]) !== '') {
+		$pfcpieces = explode('W, PFC', trim($pieces[40]), 2);
+		if(count($pfcpieces) !== 2) {
+			stop('Value doesn\'t explode properly: ' . $pieces[41], $line);
+		}
+		$in->addFeature('power-idle-watt', (int) $pfcpieces[0]);
+		$in->addFeature('power-idle-pfc', $pfcpieces[1]);
+		unset($pfcpieces);
+	}
+
+	placeinto($in, $pieces[43], $line);
+	$in->addFeature('arrival-batch', trim($pieces[44]));
+	own($in, trim($pieces[45]), $line);
+	if(trim($pieces[41]) === 'Si' && !array_key_exists('restrictions', $in->getFeatures())) {
+		$in->addFeature('restrictions', 'ready');
+	}
+	$in->addFeature('Software', trim($pieces[46]));
 
 	$counter++;
 }
