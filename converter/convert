@@ -195,7 +195,7 @@ function placeinto(Item $item, $parent, $line, $container = false) {
 }
 
 function colorify(Item $item, $color, $line) {
-	$color = strtolower($color);
+	$color = strtolower(trim($color));
 	switch($color) {
 		case 'bianco':
 			$item->addFeature('color', 'white');
@@ -220,6 +220,9 @@ function colorify(Item $item, $color, $line) {
 			return;
 		case 'rosa':
 			$item->addFeature('color', 'pink');
+			return;
+		case 'arancione':
+			$item->addFeature('color', 'orange');
 			return;
 		case 'marrone':
 			$item->addFeature('color', 'brown');
@@ -402,6 +405,9 @@ while(($line = fgets($files['case'])) !== false) {
 			case '':
 			case '?':
 				break;
+			/** @noinspection PhpMissingBreakStatementInspection - yep, fallthrough */
+			case 'Anyka':
+				$cpu->addFeature('isa', 'arm');
 			default:
 				$cpu->addFeature('brand', trim($pieces[27]));
 		}
@@ -599,8 +605,11 @@ while(($line = fgets($files['ram'])) !== false) {
 	placeinto($in, $pieces[9], $line);
 	$pieces[11] === '' ?: own($in, trim($pieces[11]), $line);
 
-	if(strtoupper($pieces[9]) === 'EMILIA' || strtoupper($pieces[9]) === 'ROSETTA' || strtoupper($pieces[9]) === 'ROSITA') {
+	$location = strtoupper(trim($pieces[9]));
+	if($location === 'EMILIA' || $location === 'ROSETTA' || $location === 'ROSITA' || $location === '40') {
 		$in->addFeature('ram-ecc', 'yes');
+	} else {
+		$in->addFeature('ram-ecc', 'no');
 	}
 
 	$counter++;
@@ -938,6 +947,12 @@ while(($line = fgets($files['cards'])) !== false) {
 	$pieces[19] === '' ?: $in->addFeature('firewire-ports-n', (int) $pieces[19]) && $hasports = true;
 	$pieces[20] === '' ?: $in->addFeature('scsi-db68-ports-n', (int) $pieces[20]) && $hasports = true;
 
+	// lacchezzo estremo
+	if(trim(strtoupper($pieces[28])) === 'EMILIA') {
+		echo 'Patching EMILIA graphics card features...'.PHP_EOL;
+		$in->addFeature('scsi-db68-ports-n', 'displayport-ports-n');
+	}
+
 	switch($pieces[21]) {
 		case 'PCI':
 			$in->addFeature('pci-sockets-n', 1);
@@ -967,7 +982,8 @@ while(($line = fgets($files['cards'])) !== false) {
 	($pieces[26] === '' || $pieces[26] === '-') ?: $in->addFeature('sn', $pieces[26]);
 	$pieces[27] === '' ?: $in->addFeature('notes', trim($pieces[27]));
 	placeinto($in, $pieces[28], $line);
-	$pieces[30] === '' ?: own($in, trim($pieces[30]), $line);
+	own($in, trim($pieces[30]), $line);
+	$pieces[31] === '' ?: colorify($in, $pieces[31], $line);
 
 	if($pieces[26] === '' || $pieces[21] === '' || !$hasports) {
 		$in->addFeature('check', 'missing-data');
