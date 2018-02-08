@@ -287,7 +287,9 @@ while(($line = fgets($files['case'])) !== false) {
 	trim($pieces[11]) === '' ?: $mobo->addFeature('model', trim($pieces[11]));
 	trim($pieces[12]) === '' ?: $mobo->addFeature('sn', trim($pieces[12]));
 	
-	if(trim($pieces[11]) === 'D845GVFT') {
+	switch(trim($pieces[11]))
+	 case 'D845GVFT':
+	 case 'MS-6528':
 		echo 'Adding game ports...'.PHP_EOL;
 		$mobo->addFeature('game-port-n', 1);
 	}
@@ -978,7 +980,7 @@ while(($line = fgets($files['cards'])) !== false) {
 	// lacchezzo estremo
 	if(trim(strtoupper($pieces[28])) === 'EMILIA') {
 		echo 'Patching EMILIA graphics card features...'.PHP_EOL;
-		$in->addFeature('scsi-db68-ports-n', 'displayport-ports-n');
+		$in->addFeature('displayport-ports-n', 2);
 	}
 
 	switch($pieces[21]) {
