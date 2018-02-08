@@ -288,10 +288,18 @@ while(($line = fgets($files['case'])) !== false) {
 	trim($pieces[12]) === '' ?: $mobo->addFeature('sn', trim($pieces[12]));
 	
 	switch(trim($pieces[11]))
-	 case 'D845GVFT':
-	 case 'MS-6528':
-		echo 'Adding game ports...'.PHP_EOL;
-		$mobo->addFeature('game-port-n', 1);
+		case 'D845GVFT':
+		case 'MS-6528':
+		case 'Scenic S2 D1331-A10 W26361-W48-X-01':
+			echo 'Adding game ports...'.PHP_EOL;
+			$mobo->addFeature('game-port-n', 1);
+			break;
+	}
+	
+	switch(trim($pieces[11])) {
+		 case 'MS-6528':
+			$mobo->addFeature('color', 'red');
+			break;
 	}
 
 	$ports = [
