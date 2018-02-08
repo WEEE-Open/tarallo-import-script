@@ -286,6 +286,11 @@ while(($line = fgets($files['case'])) !== false) {
 	trim($pieces[10]) === '' ?: $mobo->addFeature('brand', trim($pieces[10]));
 	trim($pieces[11]) === '' ?: $mobo->addFeature('model', trim($pieces[11]));
 	trim($pieces[12]) === '' ?: $mobo->addFeature('sn', trim($pieces[12]));
+	
+	if(trim($pieces[11]) === 'D845GVFT') {
+		echo 'Adding game ports...'.PHP_EOL;
+		$mobo->addFeature('game-port-n', 1);
+	}
 
 	$ports = [
 		13 => 'agp-sockets-n',
@@ -1027,8 +1032,10 @@ while(($line = fgets($files['psu'])) !== false) {
 	$missing = false;
 	$in = new Item(trim($pieces[0]));
 
-	if($in->getCode() === 'A64') {
-		$in->addFeature('color', 'golden');
+	switch($in->getCode()) {
+		case 'A64':
+			$in->addFeature('color', 'golden');
+			break;
 	}
 
 	if(trim($pieces[1]) === '-' || $pieces[4] === 'Dell DA-2') {
