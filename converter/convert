@@ -60,7 +60,7 @@ function working(Item $item, $working, $line) {
 $owners = [];
 function own(Item $item, $owner, $line) {
 	$ownerOriginal = $owner;
-	$owner = preg_replace("/[^a-z]/", "", strtolower($owner));
+	$owner = preg_replace("/[^a-z]/", "", strtolower(trim($owner)));
 	if($owner === 'areait' || $owner === 'polito') {
 		$item->addFeature('owner', 'Area IT');
 	} else if($owner === 'disat') {
@@ -68,7 +68,7 @@ function own(Item $item, $owner, $line) {
 	} else if($owner === 'nexa') {
 		$item->addFeature('owner', 'Nexa');
 	} else if(strlen($owner) > 0 && $owner{0} === 'l') {
-		$item->addFeature('owner', $ownerOriginal);
+		$item->addFeature('owner', trim($ownerOriginal));
 		if($item->getCode() === 'SCHIFOMACCHINA') {
 			$item->addFeature('restrictions', 'in-use');
 		} else {
@@ -80,7 +80,7 @@ function own(Item $item, $owner, $line) {
 	} else if($owner === '') {
 		$item->addFeature('owner', '???');
 	} else {
-		$item->addFeature('owner', $ownerOriginal);
+		$item->addFeature('owner', trim($ownerOriginal));
 		$item->addFeature('restrictions', 'other');
 	}
 	global $owners;
@@ -245,6 +245,7 @@ foreach($files as $file => $useless) {
 	$files[$file] = $handle;
 }
 
+$psufixup = [];
 $cpuid = 0;
 $moboid = 0;
 $gpuid = 100;
@@ -448,6 +449,10 @@ while(($line = fgets($files['case'])) !== false) {
 					$cpu->addFeature('cpu-socket', 'lga1155');
 					$i === 0 && $mobo->addFeature('cpu-socket', 'lga1155');
 					break;
+				case 'LGA1156':
+					$cpu->addFeature('cpu-socket', 'lga1156');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'lga1156');
+					break;
 				case 'LGA771':
 					$cpu->addFeature('cpu-socket', 'lga771');
 					$i === 0 && $mobo->addFeature('cpu-socket', 'lga771');
@@ -501,6 +506,12 @@ while(($line = fgets($files['case'])) !== false) {
 			}
 	}
 
+	$psucode = trim($pieces[38]);
+	if(substr($psucode, 0, 1) === 'A') {
+		$psufixup[$psucode] = $mobo;
+	}
+	unset($psucode);
+
 	$notes = trim($pieces[39]);
 	if($notes !== '') {
 		if(substr($notes, 0, 12) === 'CPU 32 bit. ') {
@@ -513,6 +524,7 @@ while(($line = fgets($files['case'])) !== false) {
 			$in->addFeature('notes', $notes);
 		}
 	}
+	unset($notes);
 
 	if(trim($pieces[40]) !== '') {
 		$pfcpieces = explode('W, PFC', trim($pieces[40]), 2);
@@ -994,7 +1006,7 @@ while(($line = fgets($files['cards'])) !== false) {
 	$pieces[27] === '' ?: $in->addFeature('notes', trim($pieces[27]));
 	placeinto($in, $pieces[28], $line);
 	own($in, trim($pieces[30]), $line);
-	$pieces[31] === '' ?: colorify($in, $pieces[31], $line);
+	$pieces[31] === "-\n" ?: colorify($in, $pieces[31], $line);
 
 	if($pieces[26] === '' || $pieces[21] === '' || !$hasports) {
 		$in->addFeature('check', 'missing-data');
@@ -1065,12 +1077,27 @@ while(($line = fgets($files['psu'])) !== false) {
 				case 'CFX12V + 4 pin':
 				case 'LFX12V + 4 pin':
 					$in->addFeature('psu-socket', 'atx12v-4pin');
+					if(isset($psufixup[$in->getCode()])) {
+						$psufixup[$in->getCode()]->addFeature('psu-socket', 'atx12v-4pin');
+					}
 					break;
 				case 'ATX12V + 8 pin':
 					$in->addFeature('psu-socket', 'atx12v-8pin');
+					if(isset($psufixup[$in->getCode()])) {
+						$psufixup[$in->getCode()]->addFeature('psu-socket', 'atx12v-8pin');
+					}
 					break;
 				case 'ATX12V':
 					$in->addFeature('psu-socket', 'atx12v');
+					if(isset($psufixup[$in->getCode()])) {
+						$psufixup[$in->getCode()]->addFeature('psu-socket', 'atx12v');
+					}
+					break;
+				case 'Proprietario':
+					$in->addFeature('psu-socket', 'proprietary');
+					if(isset($psufixup[$in->getCode()])) {
+						$psufixup[$in->getCode()]->addFeature('psu-socket', 'proprietary');
+					}
 					break;
 				default:
 					stop('Uknown internal PSU type: ' . $pieces[4], $line);
@@ -1086,6 +1113,8 @@ while(($line = fgets($files['psu'])) !== false) {
 				case 'ATX12V + 4 pin':
 				case 'ATX12V + 8 pin':
 					$in->addFeature('psu-form-factor', 'atx');
+					break;
+				case 'Proprietario':
 					break;
 				default:
 					stop('Uknown internal PSU type (again): ' . $pieces[4], $line);
