@@ -501,7 +501,18 @@ while(($line = fgets($files['case'])) !== false) {
 			}
 	}
 
-	trim($pieces[39]) === '' ?: $in->addFeature('notes', trim($pieces[39]));
+	$notes = trim($pieces[39]);
+	if($notes !== '') {
+		if(substr($notes, 0, 12) === 'CPU 32 bit. ') {
+			$cpu->addFeature('isa', 'x86-32');
+			$in->addFeature('notes', substr($notes, 12));
+		} else {
+			if(array_key_exists('cpu-socket', $cpu->getFeatures())) {
+				$cpu->addFeature('isa', 'x86-64');
+			}
+			$in->addFeature('notes', $notes);
+		}
+	}
 
 	if(trim($pieces[40]) !== '') {
 		$pfcpieces = explode('W, PFC', trim($pieces[40]), 2);
