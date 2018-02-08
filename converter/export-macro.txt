@@ -1,0 +1,30 @@
+REM  *****  BASIC  *****
+
+REM throw this thing into LibreOffice Calc and regret your life choices
+
+Sub csvify
+
+Dim fileProps(1) as new com.sun.star.beans.PropertyValue
+sheets = ThisComponent.Sheets
+
+fileProps(0).Name = "FilterName"
+fileProps(0).Value = "Text - txt - csv (StarCalc)"
+fileProps(1).Name = "FilterOptions"
+fileProps(1).Value = "124,34,0,1,1"
+
+i = 0
+
+Do While sheets.Count > i
+	sheet = sheets.getByIndex(i)
+	cntrllr = ThisComponent.CurrentController
+	cntrllr.setActiveSheet(sheet)
+	Dim sheetName as String
+	sheetName = sheets.ElementNames(i)
+	If LCase(sheetName) = sheetName Then
+		sURL = "file:///path/to/this/directory/right/here" & sheets.ElementNames(i) & ".csv"
+		ThisComponent.storeToURL(sURL, fileProps())
+	End If
+	i = i + 1
+Loop
+
+End Sub
