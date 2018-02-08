@@ -209,6 +209,9 @@ function colorify(Item $item, $color, $line) {
 		case 'blu':
 			$item->addFeature('color', 'blue');
 			return;
+		case 'verde':
+			$item->addFeature('color', 'green');
+			return;
 		case 'ingiallito':
 			$item->addFeature('color', 'yellowed');
 			return;
@@ -287,11 +290,10 @@ while(($line = fgets($files['case'])) !== false) {
 	trim($pieces[11]) === '' ?: $mobo->addFeature('model', trim($pieces[11]));
 	trim($pieces[12]) === '' ?: $mobo->addFeature('sn', trim($pieces[12]));
 	
-	switch(trim($pieces[11]))
+	switch(trim($pieces[11])) {
 		case 'D845GVFT':
 		case 'MS-6528':
 		case 'Scenic S2 D1331-A10 W26361-W48-X-01':
-			echo 'Adding game ports...'.PHP_EOL;
 			$mobo->addFeature('game-port-n', 1);
 			break;
 	}
