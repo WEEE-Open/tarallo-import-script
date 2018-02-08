@@ -286,6 +286,21 @@ while(($line = fgets($files['case'])) !== false) {
 	trim($pieces[10]) === '' ?: $mobo->addFeature('brand', trim($pieces[10]));
 	trim($pieces[11]) === '' ?: $mobo->addFeature('model', trim($pieces[11]));
 	trim($pieces[12]) === '' ?: $mobo->addFeature('sn', trim($pieces[12]));
+	
+	switch(trim($pieces[11]))
+		case 'D845GVFT':
+		case 'MS-6528':
+		case 'Scenic S2 D1331-A10 W26361-W48-X-01':
+			echo 'Adding game ports...'.PHP_EOL;
+			$mobo->addFeature('game-port-n', 1);
+			break;
+	}
+	
+	switch(trim($pieces[11])) {
+		 case 'MS-6528':
+			$mobo->addFeature('color', 'red');
+			break;
+	}
 
 	$ports = [
 		13 => 'agp-sockets-n',
@@ -973,7 +988,7 @@ while(($line = fgets($files['cards'])) !== false) {
 	// lacchezzo estremo
 	if(trim(strtoupper($pieces[28])) === 'EMILIA') {
 		echo 'Patching EMILIA graphics card features...'.PHP_EOL;
-		$in->addFeature('scsi-db68-ports-n', 'displayport-ports-n');
+		$in->addFeature('displayport-ports-n', 2);
 	}
 
 	switch($pieces[21]) {
@@ -1027,8 +1042,10 @@ while(($line = fgets($files['psu'])) !== false) {
 	$missing = false;
 	$in = new Item(trim($pieces[0]));
 
-	if($in->getCode() === 'A64') {
-		$in->addFeature('color', 'golden');
+	switch($in->getCode()) {
+		case 'A64':
+			$in->addFeature('color', 'golden');
+			break;
 	}
 
 	if(trim($pieces[1]) === '-' || $pieces[4] === 'Dell DA-2') {
