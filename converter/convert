@@ -39,6 +39,16 @@ function nuke($line, $expected) {
 	return $pieces;
 }
 
+$codes = [];
+function isduplicate($code, $line) {
+	global $codes;
+	if(isset($codes[$code])) {
+		stop("Duplicate code, same as:\n" . $codes[$code], $line);
+	} else {
+		$codes[$code] = $line;
+	}
+}
+
 function working(Item $item, $working, $line) {
 	if($working !== '') {
 		switch($working) {
@@ -285,7 +295,7 @@ function psupls(Item $in, $psustring, $line) {
 		case 'CFX 24 + 4':
 			$mobopin = 'atx-24pin';
 			$cpupin = '4pin';
-			$formfactor = 'ctx';
+			$formfactor = 'cfx';
 			$powerconnector = 'c13';
 			break;
 		case 'LFX 20 + 4':
@@ -387,6 +397,7 @@ foreach($files as $file => $useless) {
 $cpuid = 0;
 $moboid = 0;
 $gpuid = 100;
+$netids;
 
 $discard = fgets($files['case']);
 unset($discard);
@@ -403,19 +414,21 @@ while(($line = fgets($files['case'])) !== false) {
 	}
 
 	$in = new Item(trim($pieces[0]));
+	isduplicate($in->getCode(), $line);
 	$otherContainers[$in->getCode()] = $in;
 
 	trim($pieces[1]) === '' ?: $in->addFeature('cib', trim($pieces[1]));
 	trim($pieces[2]) === '' ?: $in->addFeature('cib-old', trim($pieces[2]));
 	trim($pieces[3]) === '' ?: $in->addFeature('other-code', trim($pieces[3]));
-	trim($pieces[4]) === '' ?: $in->addFeature('os-serial-version', trim($pieces[4]));
-	trim($pieces[5]) === '' ?: $in->addFeature('os-serial-code', trim($pieces[5]));
+	trim($pieces[4]) === '' ?: $in->addFeature('os-license-version', trim($pieces[4]));
+	trim($pieces[5]) === '' ?: $in->addFeature('os-license-code', trim($pieces[5]));
 	trim($pieces[6]) === '' ?: $in->addFeature('brand', trim($pieces[6]));
 	trim($pieces[7]) === '' ?: $in->addFeature('model', trim($pieces[7]));
 	trim($pieces[8]) === '' ?: $in->addFeature('usb-ports-n', trim($pieces[8]));
 	working($in, $pieces[9], $line);
 
 	$mobo = new Item('B' . ++$moboid);
+	isduplicate($mobo->getCode(), $line);
 	$otherContainers[$mobo->getCode()] = $mobo;
 	$mobo->addFeature('type', 'motherboard');
 	$in->addContent($mobo);
@@ -434,7 +447,7 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'MS-6528':
 		case 'Scenic S2 D1331-A10 W26361-W48-X-01':
 		case 'K7VT4A+':
-			$mobo->addFeature('game-port-n', 1);
+			$mobo->addFeature('game-ports-n', 1);
 			break;
 	}
 	
@@ -561,6 +574,7 @@ while(($line = fgets($files['case'])) !== false) {
 	}
 	for($i = 0; $i < $ncpu; $i++) {
 		$cpu = new Item('C' . ++ $cpuid);
+		isduplicate($cpu->getCode(), $line);
 		$otherContainers[$cpu->getCode()] = $cpu;
 		$cpu->addFeature('type', 'cpu');
 		$mobo->addContent($cpu);
@@ -655,6 +669,7 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'Integrata (mobo)':
 		case 'SG30': // little exception for one of the few PCs with integrated and discrete graphics. BTW, the discrete one is completely broken.
 			$gpu = new Item('SG' . ++$gpuid);
+			isduplicate($gpu->getCode(), $line);
 			$gpu->addFeature('soldered-in-place', 'yes');
 			$gpu->addFeature('type', 'graphics-card');
 			$gpu->addFeature('brand', trim($pieces[34]));
@@ -664,6 +679,7 @@ while(($line = fgets($files['case'])) !== false) {
 			break;
 		case 'Integrata (CPU)':
 			$gpu = new Item('SG' . ++$gpuid);
+			isduplicate($gpu->getCode(), $line);
 			$gpu->addFeature('soldered-in-place', 'yes');
 			$gpu->addFeature('type', 'graphics-card');
 			$gpu->addFeature('brand', trim($pieces[34]));
@@ -752,6 +768,7 @@ $counter = 0;
 while(($line = fgets($files['monitor'])) !== false) {
 	$pieces = nuke($line, count($header));
 	$in = new Item(trim($pieces[0]));
+	isduplicate($in->getCode(), $line);
 	$in->addFeature('type', 'monitor');
 	trim($pieces[1]) === '' ?: $in->addFeature('cib', trim($pieces[1]));
 	trim($pieces[2]) === '' ?: $in->addFeature('cib-old', trim($pieces[2]));
@@ -793,6 +810,7 @@ $counter = 0;
 while(($line = fgets($files['ram'])) !== false) {
 	$pieces = nuke($line, count($header));
 	$in = new Item(trim($pieces[0]));
+	isduplicate($in->getCode(), $line);
 	$in->addFeature('type', 'ram');
 	$pieces[1] === '' ?: $in->addFeature('ram-type', strtolower(trim($pieces[1])));
 	$pieces[2] === '' ?: $in->addFeature('ram-form-factor', strtolower(trim($pieces[2])));
@@ -843,6 +861,7 @@ $counter = 0;
 while(($line = fgets($files['hdd'])) !== false) {
 	$pieces = nuke($line, count($header));
 	$in = new Item(trim($pieces[0]));
+	isduplicate($in->getCode(), $line);
 	$in->addFeature('type', 'hdd');
 
 	if(trim($pieces[0]) === 'HDD2') {
@@ -974,6 +993,7 @@ $counter = 0;
 while(($line = fgets($files['odd'])) !== false) {
 	$pieces = nuke($line, count($header));
 	$in = new Item(trim($pieces[0]));
+	isduplicate($in->getCode(), $line);
 	$in->addFeature('type', 'odd');
 
 	switch(trim($pieces[1])) {
@@ -1038,6 +1058,7 @@ while(($line = fgets($files['input'])) !== false) {
 	}
 	$pieces = nuke($line, count($header));
 	$in = new Item(trim($pieces[0]));
+	isduplicate($in->getCode(), $line);
 
 	if($pieces[1] === 'Mouse') {
 		$in->addFeature('type', 'mouse');
@@ -1110,12 +1131,14 @@ $counter = 0;
 while(($line = fgets($files['cards'])) !== false) {
 	$pieces = nuke($line, count($header));
 	$in = new Item(trim($pieces[0]));
+	isduplicate($in->getCode(), $line);
 
 	switch($pieces[1]) {
 		case 'Audio':
 			$in->addFeature('type', 'audio-card');
 			break;
 		case 'Ethernet':
+			$netids[(int) substr($in->getCode(), 3)] = $in->getCode();
 			$in->addFeature('type', 'ethernet-card');
 			break;
 		case 'Modem':
@@ -1123,7 +1146,6 @@ while(($line = fgets($files['cards'])) !== false) {
 			break;
 		case 'Grafica':
 			$in->addFeature('type', 'graphics-card');
-			$in->addFeature('has-gpu', 'yes');
 			break;
 		case 'USB':
 		case 'Firewire':
@@ -1223,6 +1245,7 @@ while(($line = fgets($files['psu'])) !== false) {
 
 	$missing = false;
 	$in = new Item(trim($pieces[0]));
+	isduplicate($in->getCode(), $line);
 
 	switch($in->getCode()) {
 		case 'A64':
@@ -1288,6 +1311,7 @@ $counter = 0;
 while(($line = fgets($files['fdd'])) !== false) {
 	$pieces = nuke($line, count($header));
 	$in = new Item(trim($pieces[0]));
+	isduplicate($in->getCode(), $line);
 
 	if($in->getCode() === 'FL20') {
 		$in->addFeature('type', 'zip-drive');
@@ -1308,6 +1332,11 @@ while(($line = fgets($files['fdd'])) !== false) {
 $files['fdd'] = $counter;
 unset($in);
 
+ksort($netids);
+end($netids);
+$netid = key($netids);
+$netid++;
+unset($netids);
 $header = fgets($files['other']);
 $header = explode('|', $header);
 $counter = 0;
@@ -1316,7 +1345,13 @@ while(($line = fgets($files['other'])) !== false) {
 	if(trim($pieces[0]) === '') {
 		continue;
 	} else {
-		$in = new Item(trim($pieces[0]));
+		if(trim($pieces[0]) === 'NET') {
+			$code = 'NET' . $netid++;
+		} else {
+			$code = trim($pieces[0]);
+		}
+		$in = new Item($code);
+		isduplicate($in->getCode(), $line);
 	}
 
 	$container = false;
@@ -1341,8 +1376,22 @@ while(($line = fgets($files['other'])) !== false) {
 		case 'Scanner':
 			$in->addFeature('type', 'scanner');
 			break;
+		case 'USB hub':
+			$in->addFeature('type', 'usbhub');
+			break;
+		case 'Coso di un Dell':
+			// It's a... thing. From Dell. With an inventory sticker on it.
+			$in->addFeature('type', 'inventoried-object');
+			break;
+		case 'Carrello':
+			$in->addFeature('type', 'location');
+			break;
+		case 'Switch parallelo':
+			// It's a switch but not really a switch
+			$in->addFeature('type', 'adapter');
+			break;
 		default:
-			$in->addFeature('type', 'other');
+			stop('"Other" is not a choice', $line);
 	}
 
 	trim($pieces[2]) === '' ?: $in->addFeature('cib', trim($pieces[2]));
@@ -1378,7 +1427,7 @@ printf("Items that need manual adjustments: %d of %d (%-4.1f%%)\n", $check, $tot
 file_put_contents('../database.generated.json', json_encode($polito, JSON_PRETTY_PRINT));
 
 // Stop here to see what has been parsed without importing into database
-exit(0);
+//exit(0);
 
 echo 'Connecting to database...'.PHP_EOL;
 $dbr  = new \ReflectionObject($db);
