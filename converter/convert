@@ -432,6 +432,11 @@ while(($line = fgets($files['case'])) !== false) {
 			$mobo->addFeature('color', 'blue');
 			$in->addFeature('color', 'yellowed');
 			break;
+		case 'Processor Board (1998)':
+			$mobo->addFeature('color', 'yellow');
+			$mobo->addFeature('isa-sockets-n', 2);
+			$in->addFeature('color', 'yellowed');
+			break;
 	}
 
 	$ports = [
@@ -627,6 +632,7 @@ while(($line = fgets($files['case'])) !== false) {
 
 	switch($pieces[33]) {
 		case 'Integrata (mobo)':
+		case 'SG30': // little exception for one of the few PCs with integrated and discrete graphics. BTW, the discrete one is completely broken.
 			$gpu = new Item('SG' . ++$gpuid);
 			$gpu->addFeature('soldered-in-place', 'yes');
 			$gpu->addFeature('type', 'graphics-card');
@@ -704,9 +710,11 @@ while(($line = fgets($files['case'])) !== false) {
 	
 	if(!array_key_exists('restrictions', $in->getFeatures()) {
 		switch($in->getCode()) {
-			case '92':
 			case '12':
+			case '13':
 			case '73':
+			case '71':
+			case '92':
 				$in->addFeature('restrictions', 'training');
 		}
 	}
