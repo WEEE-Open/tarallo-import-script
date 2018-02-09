@@ -410,10 +410,15 @@ while(($line = fgets($files['case'])) !== false) {
 	trim($pieces[11]) === '' ?: $mobo->addFeature('model', trim($pieces[11]));
 	trim($pieces[12]) === '' ?: $mobo->addFeature('sn', trim($pieces[12]));
 	
+	if($in->getCode() === '71') {
+		$mobo->addFeature('isa-sockets-n', 1);
+	}
+	
 	switch(trim($pieces[11])) {
 		case 'D845GVFT':
 		case 'MS-6528':
 		case 'Scenic S2 D1331-A10 W26361-W48-X-01':
+		case 'K7VT4A+':
 			$mobo->addFeature('game-port-n', 1);
 			break;
 	}
@@ -421,6 +426,11 @@ while(($line = fgets($files['case'])) !== false) {
 	switch(trim($pieces[11])) {
 		 case 'MS-6528':
 			$mobo->addFeature('color', 'red');
+			$in->addFeature('color', 'yellowed'); // What's up with all those colorful motherboards inside cheap yellowed cases?
+			break;
+		case 'K7VT4A+':
+			$mobo->addFeature('color', 'blue');
+			$in->addFeature('color', 'yellowed');
 			break;
 	}
 
@@ -691,6 +701,15 @@ while(($line = fgets($files['case'])) !== false) {
 		$in->addFeature('restrictions', 'ready');
 	}
 	$in->addFeature('Software', trim($pieces[46]));
+	
+	if(!array_key_exists('restrictions', $in->getFeatures()) {
+		switch($in->getCode()) {
+			case '92':
+			case '12':
+			case '73':
+				$in->addFeature('restrictions', 'training');
+		}
+	}
 
 	$counter++;
 }
