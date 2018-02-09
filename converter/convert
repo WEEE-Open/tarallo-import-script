@@ -58,7 +58,9 @@ function working(Item $item, $working, $line) {
 }
 
 $owners = [];
-function own(Item $item, $owner, $line) {
+function own(Item $item, $owner,
+	/** @noinspection PhpUnusedParameterInspection */
+	$line) {
 	$ownerOriginal = $owner;
 	$owner = preg_replace("/[^a-z]/", "", strtolower(trim($owner)));
 	if($owner === 'areait' || $owner === 'polito') {
@@ -237,6 +239,125 @@ function colorify(Item $item, $color, $line) {
 	stop('Unknown color: ' . $color, $line);
 }
 
+$psufixupconnectors = [];
+$psufixupformfactor = [];
+
+function psupls(Item $in, $psustring, $line) {
+	global $psufixupconnectors, $psufixupformfactor;
+
+	switch(trim($psustring)) {
+		case 'ATX 20 + AUX':
+			$mobopin = 'atx-20pin';
+			$cpupin = 'aux';
+			$formfactor = 'atx';
+			$powerconnector = 'c13';
+			break;
+		case 'ATX 20 + 4':
+			$mobopin = 'atx-20pin';
+			$cpupin = '4pin';
+			$formfactor = 'atx';
+			$powerconnector = 'c13';
+			break;
+		case 'ATX 24 + 4':
+			$mobopin = 'atx-24pin';
+			$cpupin = '4pin';
+			$formfactor = 'atx';
+			$powerconnector = 'c13';
+			break;
+		case 'ATX 24 + 8':
+			$mobopin = 'atx-24pin';
+			$cpupin = '8pin';
+			$formfactor = 'atx';
+			$powerconnector = 'c13';
+			break;
+		case 'CFX 24 + 4':
+			$mobopin = 'atx-24pin';
+			$cpupin = '4pin';
+			$formfactor = 'ctx';
+			$powerconnector = 'c13';
+			break;
+		case 'LFX 20 + 4':
+			$mobopin = 'atx-20pin';
+			$cpupin = '4pin';
+			$formfactor = 'lfx';
+			$powerconnector = 'c13';
+			break;
+		case 'LFX 24 + 4':
+			$mobopin = 'atx-24pin';
+			$cpupin = '4pin';
+			$formfactor = 'lfx';
+			$powerconnector = 'c13';
+			break;
+		case 'ATX 20':
+			$mobopin = 'atx-20pin';
+			$cpupin = 'none';
+			$formfactor = 'atx';
+			$powerconnector = 'c13';
+			break;
+		case 'Proprietario interno':
+			$mobopin = 'proprietary';
+			$cpupin = 'proprietary';
+			$formfactor = 'proprietary';
+			$powerconnector = 'c13';
+			break;
+		case 'Barrel':
+			$mobopin = null;
+			$cpupin = null;
+			$formfactor = null;
+			$powerconnector = 'barrel';
+			break;
+		case 'Mini USB':
+			$mobopin = null;
+			$cpupin = null;
+			$formfactor = null;
+			$powerconnector = 'miniusb';
+			break;
+		case 'Dell DA-2':
+			$mobopin = null;
+			$cpupin = null;
+			$formfactor = null;
+			$powerconnector = 'miniusb';
+			break;
+		case 'Proprietario esterno':
+			$mobopin = null;
+			$cpupin = null;
+			$formfactor = null;
+			$powerconnector = 'da-2';
+			break;
+		default:
+			stop('Uknown internal PSU type: ' . $psustring, $line);
+	}
+
+	/** @noinspection PhpUndefinedVariableInspection */
+	$cpupin === null ?: $in->addFeature('psu-connector-cpu', $cpupin);
+	/** @noinspection PhpUndefinedVariableInspection */
+	$mobopin === null ?: $in->addFeature('psu-connector-motherboard', $mobopin);
+	/** @noinspection PhpUndefinedVariableInspection */
+	$formfactor === null ?: $in->addFeature('psu-form-factor', $formfactor);
+	/** @noinspection PhpUndefinedVariableInspection */
+	$powerconnector === null ?: $in->addFeature('power-connector', $powerconnector);
+
+	// Parse cases and motherboards before PSUs
+	// so add PSU connector types to motherboards
+	if(isset($psufixupconnectors[$in->getCode()])) {
+		if($cpupin === null || $mobopin === null) {
+			stop('Cannot fix(up) ' . $in->getCode() . ': no cpupin/mobopin', $line);
+		}
+		/** @noinspection PhpUndefinedMethodInspection */
+		$psufixupconnectors[$in->getCode()]->addFeature('psu-connector-cpu', $cpupin);
+		/** @noinspection PhpUndefinedMethodInspection */
+		$psufixupconnectors[$in->getCode()]->addFeature('psu-connector-motherboard', $mobopin);
+	}
+
+	if(isset($psufixupformfactor[$in->getCode()])) {
+		if($formfactor === null) {
+			stop('Cannot fix(up) ' . $in->getCode() . ': no formfactor', $line);
+		}
+		/** @noinspection PhpUndefinedMethodInspection */
+		$psufixupformfactor[$in->getCode()]->addFeature('psu-form-factor', $formfactor);
+	}
+}
+
 $files = ['case', 'monitor', 'ram', 'hdd', 'odd', 'input', 'cards', 'psu', 'fdd', 'other'];
 $files = array_flip($files);
 foreach($files as $file => $useless) {
@@ -248,7 +369,6 @@ foreach($files as $file => $useless) {
 	$files[$file] = $handle;
 }
 
-$psufixup = [];
 $cpuid = 0;
 $moboid = 0;
 $gpuid = 100;
@@ -350,6 +470,7 @@ while(($line = fgets($files['case'])) !== false) {
 				stop("Unknown ethernet speed: " . $pieces[20], $line);
 		}
 	}
+	$needfixup = false;
 	switch($pieces[25]) {
 		case '?':
 			$in->addFeature('check', 'missing-data');
@@ -359,11 +480,13 @@ while(($line = fgets($files['case'])) !== false) {
 			$f = 'proprietary';
 			$mobo->addFeature('motherboard-form-factor', $f);
 			$in->addFeature('motherboard-form-factor', $f);
+			$needfixup = true;
 			break;
 		case 'ATX':
 			$f = 'atx';
 			$mobo->addFeature('motherboard-form-factor', $f);
 			$in->addFeature('motherboard-form-factor', $f);
+			$needfixup = true;
 			break;
 		case 'Portatile':
 			$f = 'proprietary-laptop';
@@ -374,34 +497,30 @@ while(($line = fgets($files['case'])) !== false) {
 			$f = 'eatx';
 			$mobo->addFeature('motherboard-form-factor', $f);
 			$in->addFeature('motherboard-form-factor', $f);
+			$needfixup = true;
 			break;
 		case 'MiniATX':
 			$f = 'miniatx';
 			$mobo->addFeature('motherboard-form-factor', $f);
 			$in->addFeature('motherboard-form-factor', $f);
+			$needfixup = true;
 			break;
 		case 'MicroATX':
 			$f = 'microatx';
 			$mobo->addFeature('motherboard-form-factor', $f);
 			$in->addFeature('motherboard-form-factor', $f);
+			$needfixup = true;
 			break;
 		case 'MiniITX':
 			$f = 'miniitx';
 			$mobo->addFeature('motherboard-form-factor', $f);
 			$in->addFeature('motherboard-form-factor', $f);
+			$needfixup = true;
 			break;
 		default:
 			stop("Unknown motheboard form factor:" . $pieces[25], $line);
 	}
 	working($mobo, $pieces[26], $line);
-
-	// Go back for a moment...
-	if($pieces[11] === '0MM621') {
-		$in->addFeature('power-connector', 'da-2');
-	} else if($pieces[25] === 'Portatile') {
-		$in->addFeature('power-connector', 'barrel');
-	}
-	// Ok, now go ahead
 
 	if(substr($pieces[27], 0, 1) === '2') {
 		$ncpu = 2;
@@ -525,7 +644,19 @@ while(($line = fgets($files['case'])) !== false) {
 
 	$psucode = trim($pieces[38]);
 	if(substr($psucode, 0, 1) === 'A') {
-		$psufixup[$psucode] = $mobo;
+		$psufixupconnectors[$psucode] = $mobo;
+		if($needfixup) {
+			$psufixupformfactor[$psucode] = $in;
+		}
+		unset($needfixup);
+	} else if(substr($psucode, 0, 4) === 'No, ') {
+		if($pieces[11] === '0MM621') {
+			$in->addFeature('power-connector', 'da-2');
+		} else if($pieces[25] === 'Portatile') {
+			$in->addFeature('power-connector', 'barrel');
+		} else {
+			// TODO: this
+		}
 	}
 	unset($psucode);
 
@@ -1057,26 +1188,10 @@ while(($line = fgets($files['psu'])) !== false) {
 		if(trim($pieces[4]) === '?') {
 			$missing = true;
 		} else {
-			switch(trim($pieces[4])) {
-				case 'Barrel':
-					$in->addFeature('power-connector', 'barrel');
-					break;
-				case 'Mini USB':
-					$in->addFeature('power-connector', 'miniusb');
-					break;
-				case 'Proprietario':
-					$in->addFeature('power-connector', 'proprietary');
-					break;
-				case 'Dell DA-2':
-					$in->addFeature('power-connector', 'da-2');
-					break;
-				default:
-					stop('Uknown external PSU type: ' . $pieces[4], $line);
-			}
+			psupls($in, trim($pieces[4]), $line);
 		}
 	} else {
 		$in->addFeature('type', 'psu');
-		$in->addFeature('power-connector', 'c13');
 		$pieces[1] === '?' ? $missing = true : $in->addFeature('power-rated-watt', (int) $pieces[1]);
 		if($pieces[6] === '-') {
 			stop('SATA port number set to "not applicable" for internal PSU', $line);
@@ -1091,53 +1206,7 @@ while(($line = fgets($files['psu'])) !== false) {
 		if(trim($pieces[4]) === '?') {
 			$missing = true;
 		} else {
-			switch(trim($pieces[4])) {
-				case 'ATX12V + 4 pin':
-				case 'CFX12V + 4 pin':
-				case 'LFX12V + 4 pin':
-					$in->addFeature('psu-socket', 'atx12v-4pin');
-					if(isset($psufixup[$in->getCode()])) {
-						$psufixup[$in->getCode()]->addFeature('psu-socket', 'atx12v-4pin');
-					}
-					break;
-				case 'ATX12V + 8 pin':
-					$in->addFeature('psu-socket', 'atx12v-8pin');
-					if(isset($psufixup[$in->getCode()])) {
-						$psufixup[$in->getCode()]->addFeature('psu-socket', 'atx12v-8pin');
-					}
-					break;
-				case 'ATX12V':
-					$in->addFeature('psu-socket', 'atx12v');
-					if(isset($psufixup[$in->getCode()])) {
-						$psufixup[$in->getCode()]->addFeature('psu-socket', 'atx12v');
-					}
-					break;
-				case 'Proprietario':
-					$in->addFeature('psu-socket', 'proprietary');
-					if(isset($psufixup[$in->getCode()])) {
-						$psufixup[$in->getCode()]->addFeature('psu-socket', 'proprietary');
-					}
-					break;
-				default:
-					stop('Uknown internal PSU type: ' . $pieces[4], $line);
-			}
-			switch(trim($pieces[4])) {
-				case 'CFX12V + 4 pin':
-					$in->addFeature('psu-form-factor', 'cfx');
-					break;
-				case 'LFX12V + 4 pin':
-					$in->addFeature('psu-form-factor', 'lfx');
-					break;
-				case 'ATX12V':
-				case 'ATX12V + 4 pin':
-				case 'ATX12V + 8 pin':
-					$in->addFeature('psu-form-factor', 'atx');
-					break;
-				case 'Proprietario':
-					break;
-				default:
-					stop('Uknown internal PSU type (again): ' . $pieces[4], $line);
-			}
+			psupls($in, trim($pieces[4]), $line);
 		}
 	}
 
