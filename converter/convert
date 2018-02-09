@@ -235,6 +235,12 @@ function colorify(Item $item, $color, $line) {
 		case 'grigio scuro':
 			$item->addFeature('color', 'darkgrey');
 			return;
+		case 'viola':
+			$item->addFeature('color', 'violet');
+			return;
+		case 'dorato':
+			$item->addFeature('color', 'golden');
+			return;
 	}
 	stop('Unknown color: ' . $color, $line);
 }
@@ -247,8 +253,14 @@ function psupls(Item $in, $psustring, $line) {
 
 	switch(trim($psustring)) {
 		case 'ATX 20 + AUX':
-			$mobopin = 'atx-20pin';
-			$cpupin = 'aux';
+			$mobopin = 'atx-20pin-aux';
+			$cpupin = 'none';
+			$formfactor = 'atx';
+			$powerconnector = 'c13';
+			break;
+		case 'ATX 20 + 4 + AUX':
+			$mobopin = 'atx-20pin-aux';
+			$cpupin = '4pin';
 			$formfactor = 'atx';
 			$powerconnector = 'c13';
 			break;
@@ -342,6 +354,9 @@ function psupls(Item $in, $psustring, $line) {
 	if(isset($psufixupconnectors[$in->getCode()])) {
 		if($cpupin === null || $mobopin === null) {
 			stop('Cannot fix(up) ' . $in->getCode() . ': no cpupin/mobopin', $line);
+		}
+		if($mobopin === 'atx-20pin-aux') {
+			$mobopin = 'atx-20pin'; // none of our motherboards actually need the AUX connector
 		}
 		/** @noinspection PhpUndefinedMethodInspection */
 		$psufixupconnectors[$in->getCode()]->addFeature('psu-connector-cpu', $cpupin);
@@ -481,6 +496,8 @@ while(($line = fgets($files['case'])) !== false) {
 			case '10':
 				$mobo->addFeature('ethernet-ports-10m-n', '1');
 				break;
+			case '0':
+				break;
 			default:
 				stop("Unknown ethernet speed: " . $pieces[20], $line);
 		}
@@ -616,6 +633,10 @@ while(($line = fgets($files['case'])) !== false) {
 					$cpu->addFeature('cpu-socket', 'p');
 					$i === 0 && $mobo->addFeature('cpu-socket', 'p');
 					break;
+				case 'Slot 1':
+					$cpu->addFeature('cpu-socket', 'slot1');
+					$i === 0 && $mobo->addFeature('cpu-socket', 'slot1');
+					break;
 				default:
 					stop('Unknown socket: ' . trim($pieces[30]), $line);
 			}
@@ -708,7 +729,7 @@ while(($line = fgets($files['case'])) !== false) {
 	}
 	$in->addFeature('Software', trim($pieces[46]));
 	
-	if(!array_key_exists('restrictions', $in->getFeatures()) {
+	if(!array_key_exists('restrictions', $in->getFeatures())) {
 		switch($in->getCode()) {
 			case '12':
 			case '13':
@@ -1107,6 +1128,7 @@ while(($line = fgets($files['cards'])) !== false) {
 		case 'USB':
 		case 'Firewire':
 		case 'Seriale':
+		case 'Parallela':
 		case '?':
 			$in->addFeature('type', 'other-card');
 			break;
@@ -1324,6 +1346,7 @@ while(($line = fgets($files['other'])) !== false) {
 	}
 
 	trim($pieces[2]) === '' ?: $in->addFeature('cib', trim($pieces[2]));
+	// TODO: parse stuff in column 3
 	$pieces[4] === '' ?: $in->addFeature('brand', $pieces[4]);
 	$pieces[5] === '' ?: $in->addFeature('model', $pieces[5]);
 	working($in, $pieces[6], $line);
