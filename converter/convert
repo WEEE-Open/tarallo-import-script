@@ -481,17 +481,20 @@ while(($line = fgets($files['case'])) !== false) {
 		24 => 'firewire-ports-n',
 	];
 
-	$hasports = false;
+	$howmanyports = 0;
 	foreach($ports as $pos => $type) {
-		if($pieces[$pos] !== '' && $pieces[$pos] !== '0') {
-			if($type === 'pcie-ports-n' && $pieces[$pos] === 'mini') {
-				$mobo->addFeature('mini-pcie-sockets-n', 1);
-			} else {
-				$mobo->addFeature($type, (int) $pieces[$pos]);
+		if($pieces[$pos] !== '') {
+			$howmanyports++;
+			if($pieces[$pos] !== '0') {
+				if($type === 'pcie-ports-n' && $pieces[$pos] === 'mini') {
+					$mobo->addFeature('mini-pcie-sockets-n', 1);
+				} else {
+					$mobo->addFeature($type, (int) $pieces[$pos]);
+				}
 			}
 		}
 	}
-	if(!$hasports) {
+	if($howmanyports !== count($ports)) {
 		$mobo->addFeature('check', 'missing-data');
 		$check++;
 	}
