@@ -397,7 +397,7 @@ foreach($files as $file => $useless) {
 $cpuid = 0;
 $moboid = 0;
 $gpuid = 100;
-$netids;
+$netids = [];
 
 $discard = fgets($files['case']);
 unset($discard);
@@ -428,6 +428,7 @@ while(($line = fgets($files['case'])) !== false) {
 	working($in, $pieces[9], $line);
 
 	$mobo = new Item('B' . ++$moboid);
+	// TODO: set RAM type and form factor (same as PSU form factor, which is also a TODO)
 	isduplicate($mobo->getCode(), $line);
 	$otherContainers[$mobo->getCode()] = $mobo;
 	$mobo->addFeature('type', 'motherboard');
