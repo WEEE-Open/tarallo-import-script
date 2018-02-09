@@ -662,8 +662,21 @@ while(($line = fgets($files['case'])) !== false) {
 			$cpu->addFeature('check', 'missing-data')->addFeature('notes', $notes);
 			$check++;
 		}
+		working($cpu, $pieces[31], $line);
+		$notes = trim($pieces[39]);
+		if($notes !== '') {
+			if(substr($notes, 0, 12) === 'CPU 32 bit. ') {
+				$cpu->addFeature('isa', 'x86-32');
+			} else {
+				// This skips unknown CPUs (since we don't really know if they're 32 or 64 bits, yet)
+				if(array_key_exists('cpu-socket', $cpu->getFeatures())) {
+					$cpu->addFeature('isa', 'x86-64');
+				}
+			}
+		}
+	unset($notes);
 	}
-	working($cpu, $pieces[31], $line);
+	unset($cpu);
 
 	switch($pieces[33]) {
 		case 'Integrata (mobo)':
@@ -716,12 +729,8 @@ while(($line = fgets($files['case'])) !== false) {
 	$notes = trim($pieces[39]);
 	if($notes !== '') {
 		if(substr($notes, 0, 12) === 'CPU 32 bit. ') {
-			$cpu->addFeature('isa', 'x86-32');
 			$in->addFeature('notes', substr($notes, 12));
 		} else {
-			if(array_key_exists('cpu-socket', $cpu->getFeatures())) {
-				$cpu->addFeature('isa', 'x86-64');
-			}
 			$in->addFeature('notes', $notes);
 		}
 	}
@@ -743,7 +752,7 @@ while(($line = fgets($files['case'])) !== false) {
 	if(trim($pieces[41]) === 'Si' && !array_key_exists('restrictions', $in->getFeatures())) {
 		$in->addFeature('restrictions', 'ready');
 	}
-	$in->addFeature('Software', trim($pieces[46]));
+	trim($pieces[46]) === '' ?: $in->addFeature('Software', trim($pieces[46]));
 	
 	if(!array_key_exists('restrictions', $in->getFeatures())) {
 		switch($in->getCode()) {
