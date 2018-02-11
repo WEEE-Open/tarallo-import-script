@@ -24,11 +24,19 @@ systemctl start mysql
 #mysql -uroot -proot -e "SET PASSWORD = PASSWORD('');"
 
 echo "Doing stuff with Apache..."
+
 cat << 'EOF' > "/etc/php/7.0/mods-available/xdebug.ini"
 xdebug.remote_enable = on
 xdebug.remote_connect_back = on
 xdebug.idekey = "vagrant"
 EOF
+cat << 'EOF' > "/etc/apache2/conf-available/allow-hacess.conf"
+<Directory /var/www/html/>
+	AllowOverride All
+</Directory>
+EOF
+a2enconf "allow-hacess"
+a2enmod rewrite
 rm "$DOCUMENT_ROOT/index.html"
 systemctl restart apache2
 
