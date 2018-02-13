@@ -453,7 +453,10 @@ while(($line = fgets($files['case'])) !== false) {
 	}
 	
 	switch(trim($pieces[11])) {
-		 case 'MS-6528':
+		case 'P4P800 Deluxe':
+			$in->addFeature('color', 'blue');
+			$mobo->addFeature('color', 'yellow');
+		case 'MS-6528':
 			$mobo->addFeature('color', 'red');
 			$in->addFeature('color', 'yellowed'); // What's up with all those colorful motherboards inside cheap yellowed cases?
 			break;
