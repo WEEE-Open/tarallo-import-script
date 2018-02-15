@@ -59,12 +59,14 @@ mysql -uroot -proot -e "CREATE DATABASE tarallo DEFAULT CHARSET=utf8mb4 COLLATE=
 mysql -uroot -proot tarallo < "$DOCUMENT_ROOT/server/database.sql"
 mysql -uroot -proot tarallo < "$DOCUMENT_ROOT/server/database-data.sql"
 
-#echo "Importing test database..."
-#mysql -uroot -proot -e "CREATE DATABASE tarallo_test DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-#mysql -uroot -proot tarallo_test < "$DOCUMENT_ROOT/server/database.sql"
+echo "Same, but for test database..."
+mysql -uroot -proot -e "CREATE DATABASE tarallo_test DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+mysql -uroot -proot tarallo_test < "$DOCUMENT_ROOT/server/database.sql"
+mysql -uroot -proot tarallo_test < "$DOCUMENT_ROOT/server/database-data.sql"
 
-echo "Importing sample data..."
-mysql -uroot -proot < "/data/sample-data.sql"
+# TODO: new sample data
+#echo "Importing sample data..."
+#mysql -uroot -proot < "/data/sample-data.sql"
 
 echo "Configuring database..."
 cat << 'EOF' > "$DOCUMENT_ROOT/server/db.php"
