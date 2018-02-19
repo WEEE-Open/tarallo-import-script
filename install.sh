@@ -26,6 +26,7 @@ systemctl start mysql
 echo "Doing stuff with Apache..."
 
 cat << 'EOF' > "/etc/php/7.0/mods-available/xdebug.ini"
+zend_extension = xdebug.so
 xdebug.remote_enable = on
 xdebug.remote_connect_back = on
 xdebug.idekey = "vagrant"
@@ -37,6 +38,7 @@ cat << 'EOF' > "/etc/apache2/conf-available/allow-hacess.conf"
 EOF
 a2enconf "allow-hacess"
 a2enmod rewrite
+phpenmod xdebug
 rm "$DOCUMENT_ROOT/index.html"
 systemctl restart apache2
 
