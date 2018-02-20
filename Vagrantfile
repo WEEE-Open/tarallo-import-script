@@ -17,6 +17,10 @@ Vagrant.configure("2") do |config|
     v.name = "tarallo"
   end
 
-  config.vm.provision "shell", path: "./install.sh"
+  config.vm.provision "shell", path: "./provision/install.sh"
+  config.vm.provision "adminer", type: "shell", path: "./provision/adminer.sh"
+  config.vm.provision "db", type: "shell", path: "./provision/db.sh"
+  config.vm.provision "db-test", type: "shell", path: "./provision/dbtest.sh"
+  config.vm.provision "shell", path: "./provision/deps.sh"
 
 end
