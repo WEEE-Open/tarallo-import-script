@@ -3,7 +3,6 @@
 chdir(__DIR__);
 $data = file_get_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'database-data.sql');
 $lines = preg_split('/[\n\r]/', $data, -1, PREG_SPLIT_NO_EMPTY);
-//$resultjs = 'let features = new Map();'.PHP_EOL;
 $resultjs = '// BEGIN GENERATED CODE' . PHP_EOL;
 $resultphp = "\t// BEGIN GENERATED CODE" . PHP_EOL . "\tconst features = [" . PHP_EOL;
 
@@ -18,7 +17,7 @@ foreach($lines as $line) {
 		continue;
 	}
 	/** @noinspection SqlNoDataSourceInspection */
-	$wut = 'INSERT INTO `FeatureValue`';
+	$wut = 'INSERT INTO `FeatureEnum`';
 	if(substr($line, 0, strlen($wut)) === $wut) {
 		$block = 2;
 		continue;
@@ -27,16 +26,15 @@ foreach($lines as $line) {
 		continue;
 	} else {
 		$boom = explode(',', $line);
-		if(count($boom) < 3) {
+		if(count($boom) < 2) {
 			continue;
 		}
 		if(substr(trim($boom[0]), 0, 2) == '--') {
 			continue;
 		}
 		if($block === 1) {
-			$id = substr($boom[0], 2);
-			$feature = substr($boom[1], 2, strlen($boom[1]) - 3);
-			$type = substr($boom[2], 1, 1);
+			$feature = $id = substr($boom[0], 3, strlen($boom[0]) - 4);
+			$type = substr($boom[1], 1, 1);
 
 			if($type === '2') {
 				$resultjs .= 'Features.list.set(\'' . $feature . '\', new Set({REPLACE' . $id . '}));' . PHP_EOL;
@@ -61,15 +59,16 @@ foreach($lines as $line) {
 
 			$features[$id] = [];
 
-			echo 'Feature: ' . $id . ':' . $feature . ':' . $type . PHP_EOL;
+			echo 'Feature: ' . $feature . ':' . $type . PHP_EOL;
 		} else if($block === 2) {
-			if(count($boom) === 3) {
-				$distance = 5;
+			// last piece
+			if(count($boom) === 2) {
+				$trailing = 5;
 			} else {
-				$distance = 4;
+				$trailing = 4;
 			}
-			$id = substr($boom[0], 2);
-			$value = substr($boom[2], 2, strlen($boom[2]) - $distance);
+			$id = substr($boom[0], 3, strlen($boom[0]) - 4);
+			$value = substr($boom[1], 2, strlen($boom[1]) - $trailing);
 
 			$features[$id][] = $value;
 
