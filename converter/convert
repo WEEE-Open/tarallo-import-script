@@ -556,7 +556,12 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'MiniATX':
 			$f = 'miniatx';
 			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
-			$in->addFeature(new Feature('motherboard-form-factor', $f));
+			if(substr(trim($pieces[11]), 0, strlen('Compaq d530 CMT')) === 'Compaq d530 CMT') {
+				echo 'Shimming the shim out of HP Compaq d530...'.PHP_EOL;
+				$in->addFeature(new Feature('motherboard-form-factor', 'atx'));
+			} else {
+				$in->addFeature(new Feature('motherboard-form-factor', $f));
+			}
 			$needfixup = true;
 			break;
 		case 'MicroATX':
