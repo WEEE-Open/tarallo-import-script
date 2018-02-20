@@ -440,6 +440,8 @@ while(($line = fgets($files['case'])) !== false) {
 	trim($pieces[11]) === '' ?: $mobo->addFeature(new Feature('model', trim($pieces[11])));
 	trim($pieces[12]) === '' ?: $mobo->addFeature(new Feature('sn', trim($pieces[12])));
 	
+	trim($pieces[11]) === '' ?: $mobomodel = trim($pieces[11]);
+	
 	if($in->getCode() === '71') {
 		$mobo->addFeature(new Feature('isa-sockets-n', 1));
 	}
@@ -556,11 +558,14 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'MiniATX':
 			$f = 'miniatx';
 			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
-			if(substr(trim($pieces[11]), 0, strlen('Compaq d530 CMT')) === 'Compaq d530 CMT') {
-				echo 'Shimming the shim out of HP Compaq d530...'.PHP_EOL;
-				$in->addFeature(new Feature('motherboard-form-factor', 'atx'));
-			} else {
-				$in->addFeature(new Feature('motherboard-form-factor', $f));
+			switch($mobomodel) {
+				case '0A58h':
+				case '085Ch':
+					echo 'Shimming the shim out of weird HP Compaq motherboard + case combos...'.PHP_EOL;
+					$in->addFeature(new Feature('motherboard-form-factor', 'atx'));
+					break;
+				default:
+					$in->addFeature(new Feature('motherboard-form-factor', $f));
 			}
 			$needfixup = true;
 			break;
@@ -695,6 +700,7 @@ while(($line = fgets($files['case'])) !== false) {
 	switch($pieces[33]) {
 		case 'Integrata (mobo)':
 		case 'SG30': // little exception for one of the few PCs with integrated and discrete graphics. BTW, the discrete one is completely broken.
+		case 'SG50':
 			$gpu = new Item('SG' . ++$gpuid);
 			isduplicate($gpu->getCode(), $line);
 			$gpu->addFeature(new Feature('soldered-in-place', 'yes'));
