@@ -17,8 +17,8 @@ and you will get:
 `?XDEBUG_SESSION_START=whatever` to set another IDE key)
 * Adminer at `127.0.0.1:8080/adminer.php` for database inspection (user: root, 
 password: root)
-* database accessible externally by root at `127.0.0.1:3306`
-* some sample data (user: asd, password: asd, all users have password asd)
+* ~~database accessible externally by root at `127.0.0.1:3306`~~ (currently broken for unknown reasons)
+* ~~some sample data~~ (user: asd, password: asd, all users have password asd) (currently broken, but tests create an user with that username/password)
 
 If port gets changed from 8080 to anything else by Vagrant, no manual adjustments should
 be necessary but it hasn't been tested.
@@ -43,8 +43,9 @@ These are PHP scripts which can be run directly or by using `php script-name`.
 ### Feature list generation
 
 `generate-features` reads the feature list from `tarallo-backend/database-data.sql`,
-converts it to JS code and places it into `tarallo-frontend/js/feratures.js`,
-which should be manually reviewed and commited afterward.
+converts it to JS code and places it into `tarallo-frontend/js/feratures.js` and
+`tarallo-backend/src/Database/Feature.php` which should be manually reviewed and
+commited afterward.
 
 ### Inserting initial data
 
