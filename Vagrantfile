@@ -11,7 +11,7 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder "./tarallo-frontend", "/var/www/html/tarallo"
 
   config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
-  config.vm.network "forwarded_port", guest: 3306, host: 3306, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 3306, host: 3307, host_ip: "127.0.0.1"
 
   config.vm.provider "virtualbox" do |v|
     v.name = "tarallo"

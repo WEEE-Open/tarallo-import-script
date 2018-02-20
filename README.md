@@ -17,7 +17,7 @@ and you will get:
 `?XDEBUG_SESSION_START=whatever` to set another IDE key)
 * Adminer at `127.0.0.1:8080/adminer.php` for database inspection (user: root, 
 password: root)
-* ~~database accessible externally by root at `127.0.0.1:3306`~~ (currently broken for unknown reasons)
+* database accessible externally by root at `127.0.0.1:3307` (note the non-standard port)
 * ~~some sample data~~ (user: asd, password: asd, all users have password asd) (currently broken, but tests create an user with that username/password)
 
 If port gets changed from 8080 to anything else by Vagrant, no manual adjustments should
