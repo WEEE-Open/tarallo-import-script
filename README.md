@@ -16,9 +16,9 @@ and you will get:
 * Xdebug enabled by default with IDE key `vagrant` (or use 
 `?XDEBUG_SESSION_START=whatever` to set another IDE key)
 * Adminer at `127.0.0.1:8080/adminer.php` for database inspection (user: root, 
-password: root)
+password: root, server: localhost:3306)
 * database accessible externally by root at `127.0.0.1:3307` (note the non-standard port)
-* ~~some sample data~~ (user: asd, password: asd, all users have password asd) (currently broken, but tests create an user with that username/password)
+* some sample data, which right now is only 4 users and that's it (user: `asd`, password: `asd`, all users have password `asd`)
 
 If port gets changed from 8080 to anything else by Vagrant, no manual adjustments should
 be necessary but it hasn't been tested.

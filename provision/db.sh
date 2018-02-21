@@ -11,8 +11,8 @@ mysql -uroot -proot tarallo < "$DOCUMENT_ROOT/server/database.sql"
 mysql -uroot -proot tarallo < "$DOCUMENT_ROOT/server/database-data.sql"
 
 # TODO: new sample data
-#echo "Importing sample data..."
-#mysql -uroot -proot < "/data/sample-data.sql"
+echo "Importing sample data..."
+mysql -uroot -proot < "/data/sample-data.sql"
 
 echo "Configuring database..."
 cat << 'EOF' > "$DOCUMENT_ROOT/server/db.php"
