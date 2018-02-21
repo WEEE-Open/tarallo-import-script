@@ -2,7 +2,7 @@
 <?php
 chdir(__DIR__);
 if(!chdir('../tarallo-backend')) {
-	echo 'Cannot change directory'.PHP_EOL;
+	echo 'Cannot change directory' . PHP_EOL;
 };
 /** @noinspection PhpIncludeInspection */
 include 'vendor/autoload.php';
@@ -10,22 +10,23 @@ include 'vendor/autoload.php';
 use WEEEOpen\Tarallo\Server\Database\Database;
 use WEEEOpen\Tarallo\Server\Feature;
 use WEEEOpen\Tarallo\Server\Item;
+
 define('DBNAME', 'tarallo');
 // That's not the production server, OBVIOUSLY. This is run on testing, then database will be exported and imported again in production.
-$db = new Database('root', 'root', 'mysql:host=127.0.0.1');
+$db = new Database('root', 'root', 'mysql:host=127.0.0.1;port=3307');
 $check = 0; // How many items should be manually checked
 
 function stop($error, $line) {
-	echo $error.PHP_EOL;
-	echo 'Line that caused the error:'.PHP_EOL;
-	echo PHP_EOL.$line.PHP_EOL;
+	echo $error . PHP_EOL;
+	echo 'Line that caused the error:' . PHP_EOL;
+	echo PHP_EOL . $line . PHP_EOL;
 	exit(1);
 }
 
 function notice($message, $line) {
-	echo $message.PHP_EOL;
+	echo $message . PHP_EOL;
 	echo 'Line: ';
-	echo $line.PHP_EOL;
+	echo $line . PHP_EOL;
 }
 
 function nuke($line, $expected) {
@@ -69,9 +70,12 @@ function working(Item $item, $working, $line) {
 }
 
 $owners = [];
-function own(Item $item, $owner,
+function own(
+	Item $item,
+	$owner,
 	/** @noinspection PhpUnusedParameterInspection */
-	$line) {
+	$line
+) {
 	$ownerOriginal = $owner;
 	$owner = preg_replace("/[^a-z]/", "", strtolower(trim($owner)));
 	if($owner === 'areait' || $owner === 'polito') {
@@ -157,12 +161,14 @@ function placeinto(Item $item, $parent, $line, $container = false) {
 			global $$where;
 			/** @noinspection PhpUndefinedMethodInspection */
 			$$where->addContent($item);
+
 			return;
 		case 'zonamrf':
 		case 'mirafiori':
 			global $mrf;
 			/** @noinspection PhpUndefinedMethodInspection */
 			$mrf->addContent($item);
+
 			return;
 		case 'perso':
 		case 'persa':
@@ -170,24 +176,28 @@ function placeinto(Item $item, $parent, $line, $container = false) {
 			global $chernobyl;
 			/** @noinspection PhpUndefinedMethodInspection */
 			$chernobyl->addContent($item);
+
 			return;
 	}
 	if(strstr($where, 'scatolaramrotte') > -1) {
 		global $scatolaRAM;
 		/** @noinspection PhpUndefinedMethodInspection */
 		$scatolaRAM->addContent($item);
+
 		return;
 	}
 	if(strstr($where, 'armadiol') > -1) {
 		global $armadiol;
 		/** @noinspection PhpUndefinedMethodInspection */
 		$armadiol->addContent($item);
+
 		return;
 	}
 	if(strstr($where, 'armadiod') > -1) {
 		global $armadiod;
 		/** @noinspection PhpUndefinedMethodInspection */
 		$armadiod->addContent($item);
+
 		return;
 	}
 	// TODO: handle this correctly
@@ -195,15 +205,18 @@ function placeinto(Item $item, $parent, $line, $container = false) {
 		global $armadiol;
 		/** @noinspection PhpUndefinedMethodInspection */
 		$armadiol->addContent($item);
+
 		return;
 	}
 	$parent = trim($parent);
 	if(isset($otherContainers[$parent])) {
 		/** @noinspection PhpUndefinedMethodInspection */
 		$otherContainers[$parent]->addContent($item);
+
 		return;
 	}
 	stop('Unknown location: ' . $parent, $line);
+
 	return null;
 }
 
@@ -212,45 +225,67 @@ function colorify(Item $item, $color, $line) {
 	switch($color) {
 		case 'bianco':
 			$item->addFeature(new Feature('color', 'white'));
+
 			return;
 		case 'nero':
 			$item->addFeature(new Feature('color', 'black'));
+
 			return;
 		case 'grigio':
 			$item->addFeature(new Feature('color', 'grey'));
+
 			return;
 		case 'blu':
 			$item->addFeature(new Feature('color', 'blue'));
+
 			return;
 		case 'verde':
 			$item->addFeature(new Feature('color', 'green'));
+
+			return;
+		case 'rosso':
+			$item->addFeature(new Feature('color', 'red'));
+
 			return;
 		case 'ingiallito':
 			$item->addFeature(new Feature('color', 'yellowed'));
+
 			return;
 		case 'trasparente scuro':
 			$item->addFeature(new Feature('color', 'transparent-dark'));
+
 			return;
 		case 'azzurro':
 			$item->addFeature(new Feature('color', 'lightblue'));
+
 			return;
 		case 'rosa':
 			$item->addFeature(new Feature('color', 'pink'));
+
 			return;
 		case 'arancione':
 			$item->addFeature(new Feature('color', 'orange'));
+
 			return;
 		case 'marrone':
 			$item->addFeature(new Feature('color', 'brown'));
+
 			return;
 		case 'grigio scuro':
 			$item->addFeature(new Feature('color', 'darkgrey'));
+
 			return;
 		case 'viola':
 			$item->addFeature(new Feature('color', 'violet'));
+
+			return;
+		case 'giallo':
+			$item->addFeature(new Feature('color', 'yellow'));
+
 			return;
 		case 'dorato':
 			$item->addFeature(new Feature('color', 'golden'));
+
 			return;
 	}
 	stop('Unknown color: ' . $color, $line);
@@ -296,6 +331,12 @@ function psupls(Item $in, $psustring, $line) {
 		case 'CFX 24 + 4':
 			$mobopin = 'atx-24pin';
 			$cpupin = '4pin';
+			$formfactor = 'cfx';
+			$powerconnector = 'c13';
+			break;
+		case 'CFX 24 + 6':
+			$mobopin = 'atx-24pin';
+			$cpupin = '6pin';
 			$formfactor = 'cfx';
 			$powerconnector = 'c13';
 			break;
@@ -410,11 +451,15 @@ $counter = 0;
 while(($line = fgets($files['case'])) !== false) {
 	$pieces = nuke($line, count($header));
 
-	if(substr(trim($pieces[0]), 0,1) === '(') {
+	if(substr(trim($pieces[0]), 0, 1) === '(') {
 		continue;
 	}
 
-	$in = new Item(trim($pieces[0]));
+	try {
+		$in = new Item(trim($pieces[0]));
+	} catch(\InvalidArgumentException $e) {
+		stop('Invalid code', $line);
+	}
 	isduplicate($in->getCode(), $line);
 	$otherContainers[$in->getCode()] = $in;
 
@@ -425,7 +470,7 @@ while(($line = fgets($files['case'])) !== false) {
 	trim($pieces[5]) === '' ?: $in->addFeature(new Feature('os-license-code', trim($pieces[5])));
 	trim($pieces[6]) === '' ?: $in->addFeature(new Feature('brand', trim($pieces[6])));
 	trim($pieces[7]) === '' ?: $in->addFeature(new Feature('model', trim($pieces[7])));
-	trim($pieces[8]) === '' ?: $in->addFeature(new Feature('usb-ports-n', trim($pieces[8])));
+	trim($pieces[8]) === '' ?: $in->addFeature(new Feature('usb-ports-n', (int) trim($pieces[8])));
 	working($in, $pieces[9], $line);
 
 	$mobo = new Item('B' . ++$moboid);
@@ -439,13 +484,13 @@ while(($line = fgets($files['case'])) !== false) {
 	trim($pieces[10]) === '' ?: $mobo->addFeature(new Feature('brand', trim($pieces[10])));
 	trim($pieces[11]) === '' ?: $mobo->addFeature(new Feature('model', trim($pieces[11])));
 	trim($pieces[12]) === '' ?: $mobo->addFeature(new Feature('sn', trim($pieces[12])));
-	
+
 	trim($pieces[11]) === '' ?: $mobomodel = trim($pieces[11]);
-	
+
 	if($in->getCode() === '71') {
 		$mobo->addFeature(new Feature('isa-sockets-n', 1));
 	}
-	
+
 	switch(trim($pieces[11])) {
 		case 'D845GVFT':
 		case 'MS-6528':
@@ -454,7 +499,7 @@ while(($line = fgets($files['case'])) !== false) {
 			$mobo->addFeature(new Feature('game-ports-n', 1));
 			break;
 	}
-	
+
 	switch(trim($pieces[11])) {
 		case 'P4P800 Deluxe':
 			$in->addFeature(new Feature('color', 'blue'));
@@ -462,7 +507,8 @@ while(($line = fgets($files['case'])) !== false) {
 			break;
 		case 'MS-6528':
 			$mobo->addFeature(new Feature('color', 'red'));
-			$in->addFeature(new Feature('color', 'yellowed')); // What's up with all those colorful motherboards inside cheap yellowed cases?
+			$in->addFeature(new Feature('color',
+				'yellowed')); // What's up with all those colorful motherboards inside cheap yellowed cases?
 			break;
 		case 'K7VT4A+':
 			$mobo->addFeature(new Feature('color', 'blue'));
@@ -509,16 +555,33 @@ while(($line = fgets($files['case'])) !== false) {
 	if($pieces[20] !== '') {
 		switch((string) $pieces[20]) {
 			case '1000':
-				$mobo->addFeature(new Feature('ethernet-ports-1000m-n', '1'));
+				$mobo->addFeature(new Feature('ethernet-ports-1000m-n', 1));
 				break;
 			case '2x1000':
-				$mobo->addFeature(new Feature('ethernet-ports-1000m-n', '2'));
+				$mobo->addFeature(new Feature('ethernet-ports-1000m-n', 2));
 				break;
 			case '100':
-				$mobo->addFeature(new Feature('ethernet-ports-100m-n', '1'));
+				$mobo->addFeature(new Feature('ethernet-ports-100m-n', 1));
+				break;
+			case '2x100':
+				$mobo->addFeature(new Feature('ethernet-ports-100m-n', 2));
 				break;
 			case '10':
-				$mobo->addFeature(new Feature('ethernet-ports-10m-n', '1'));
+				$mobo->addFeature(new Feature('ethernet-ports-10m-n', 1));
+				break;
+			// Some columns have been "overloaded" with random stuff, because I didn't want to add a billion columns at the end of the sheet
+			// Not really a nice design, but this script will be hopefully thrown away forever once the import is done
+			case 'M+1000':
+				// Who puts a modem and a Gigabit Ethernet port on the same motherboard!? Well, that's happened.
+				$mobo->addFeature(new Feature('ethernet-ports-1000m-n', 1));
+				$mobo->addFeature(new Feature('rj11-ports-n', 1));
+				break;
+			case 'M+100':
+				$mobo->addFeature(new Feature('ethernet-ports-100m-n', 1));
+				$mobo->addFeature(new Feature('rj11-ports-n', 1));
+				break;
+			case 'M':
+				$mobo->addFeature(new Feature('rj11-ports-n', 1));
 				break;
 			case '0':
 				break;
@@ -561,7 +624,7 @@ while(($line = fgets($files['case'])) !== false) {
 			switch($mobomodel) {
 				case '0A58h':
 				case '085Ch':
-					echo 'Shimming the shim out of weird HP Compaq motherboard + case combos...'.PHP_EOL;
+					echo 'Shimming the shim out of weird HP Compaq motherboard + case combos...' . PHP_EOL;
 					$in->addFeature(new Feature('motherboard-form-factor', 'atx'));
 					break;
 				default:
@@ -592,7 +655,7 @@ while(($line = fgets($files['case'])) !== false) {
 		$ncpu = 1;
 	}
 	for($i = 0; $i < $ncpu; $i++) {
-		$cpu = new Item('C' . ++ $cpuid);
+		$cpu = new Item('C' . ++$cpuid);
 		isduplicate($cpu->getCode(), $line);
 		$otherContainers[$cpu->getCode()] = $cpu;
 		$cpu->addFeature(new Feature('type', 'cpu'));
@@ -630,21 +693,28 @@ while(($line = fgets($files['case'])) !== false) {
 					$cpu->addFeature(new Feature('cpu-socket', 'lga775'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'lga775'));
 					break;
-				case '478':
+				case 'mPGA478B':
 					$cpu->addFeature(new Feature('cpu-socket', 'socket478'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket478'));
 					break;
-				case 'PGA478':
-				case '479':
-					$cpu->addFeature(new Feature('cpu-socket', 'socket479'));
-					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket479'));
+				case 'mPGA478A':
+					$cpu->addFeature(new Feature('cpu-socket', 'socket479a'));
+					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket479a'));
+					break;
+				case 'mPGA478C':
+					$cpu->addFeature(new Feature('cpu-socket', 'socket479c'));
+					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket479c'));
 					break;
 				case '462 (A)':
 					$cpu->addFeature(new Feature('cpu-socket', 'socket462a'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket462a'));
 					break;
+				case 'Socket M':
+					$cpu->addFeature(new Feature('cpu-socket', 'socket479m'));
+					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket479m'));
+					break;
 				case 'Soldered':
-					$cpu->addFeature(new Feature('soldered-in-place', 'yes'));
+					// TODO: replace this soldered-in-place item with Product
 					break;
 				case 'LGA1155':
 					$cpu->addFeature(new Feature('cpu-socket', 'lga1155'));
@@ -667,6 +737,10 @@ while(($line = fgets($files['case'])) !== false) {
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'p'));
 					break;
 				case 'Slot 1':
+					$cpu->addFeature(new Feature('cpu-socket', 'slot1'));
+					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'slot1'));
+					break;
+				case '495':
 					$cpu->addFeature(new Feature('cpu-socket', 'slot1'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'slot1'));
 					break;
@@ -693,7 +767,7 @@ while(($line = fgets($files['case'])) !== false) {
 				}
 			}
 		}
-	unset($notes);
+		unset($notes);
 	}
 	unset($cpu);
 
@@ -703,7 +777,7 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'SG50':
 			$gpu = new Item('SG' . ++$gpuid);
 			isduplicate($gpu->getCode(), $line);
-			$gpu->addFeature(new Feature('soldered-in-place', 'yes'));
+			// TODO: replace this soldered-in-place item with Product
 			$gpu->addFeature(new Feature('type', 'graphics-card'));
 			$gpu->addFeature(new Feature('brand', trim($pieces[34])));
 			$gpu->addFeature(new Feature('model', trim($pieces[35])));
@@ -713,7 +787,7 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'Integrata (CPU)':
 			$gpu = new Item('SG' . ++$gpuid);
 			isduplicate($gpu->getCode(), $line);
-			$gpu->addFeature(new Feature('soldered-in-place', 'yes'));
+			// TODO: replace this soldered-in-place item with Product
 			$gpu->addFeature(new Feature('type', 'graphics-card'));
 			$gpu->addFeature(new Feature('brand', trim($pieces[34])));
 			$gpu->addFeature(new Feature('model', trim($pieces[35])));
@@ -773,8 +847,8 @@ while(($line = fgets($files['case'])) !== false) {
 	if(trim($pieces[41]) === 'Si' && !array_key_exists('restrictions', $in->getFeatures())) {
 		$in->addFeature(new Feature('restrictions', 'ready'));
 	}
-	trim($pieces[46]) === '' ?: $in->addFeature(new Feature('Software', trim($pieces[46])));
-	
+	trim($pieces[46]) === '' ?: $in->addFeature(new Feature('software', trim($pieces[46])));
+
 	if(!array_key_exists('restrictions', $in->getFeatures())) {
 		switch($in->getCode()) {
 			case '12':
@@ -808,7 +882,8 @@ while(($line = fgets($files['monitor'])) !== false) {
 	working($in, $pieces[6], $line);
 	$pieces[7] === '-' ?: $in->addFeature(new Feature('vga-ports-n', 1));
 	$pieces[8] === '-' ?: $in->addFeature(new Feature('dvi-ports-n', 1));
-	$pieces[9] === '-' ?: ($in->addFeature(new Feature('usb-ports-n', 2)) && $in->addFeature(new Feature('check', 'wrong-data')) && $check++);
+	$pieces[9] === '-' ?: ($in->addFeature(new Feature('usb-ports-n', 2)) && $in->addFeature(new Feature('check',
+			'wrong-data')) && $check++);
 	$pieces[10] === '-' ?: $in->addFeature(new Feature('hdmi-ports-n', 1));
 	$pieces[11] === '-' ?: $in->addFeature(new Feature('s-video-ports-n', 1));
 	$pieces[12] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[12])));
@@ -849,7 +924,7 @@ while(($line = fgets($files['ram'])) !== false) {
 	working($in, $pieces[5], $line);
 	if(trim($pieces[6]) !== '') {
 		$pieces[6] = trim($pieces[6]);
-		$subpieces = explode(' ', $pieces[6],2);
+		$subpieces = explode(' ', $pieces[6], 2);
 		assert(count($subpieces) > 0);
 		if(count($subpieces) === 1) {
 			if(substr($subpieces[0], 0, 5) === 'VS512') {
@@ -863,7 +938,7 @@ while(($line = fgets($files['ram'])) !== false) {
 		}
 	}
 	$pieces[7] = trim($pieces[7]);
-		$pieces[7] === '' || $pieces[7] === '-' ?: $in->addFeature(new Feature('sn', trim($pieces[7])));
+	$pieces[7] === '' || $pieces[7] === '-' ?: $in->addFeature(new Feature('sn', trim($pieces[7])));
 	if(mb_substr($pieces[7], 0, 3) === '...' || mb_substr($pieces[7], 0, 1) === '…') {
 		$in->addFeature(new Feature('check', 'missing-data'));
 		$check++;
@@ -927,19 +1002,21 @@ while(($line = fgets($files['hdd'])) !== false) {
 		case 'SCSI DB68':
 			$in->addFeature(new Feature('scsi-db68-ports-n', 1));
 			$in->addFeature(new Feature('hdd-odd-form-factor', '3.5'));
-			array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check', 'wrong-location')) && $check++);
+			array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
+					'wrong-location')) && $check++);
 			break;
 		case 'SCSI':
 			$in->addFeature(new Feature('scsi-sca2-ports-n', 1));
 			$in->addFeature(new Feature('hdd-odd-form-factor', '3.5'));
-			array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check', 'wrong-data')) && $check++);
+			array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
+					'wrong-data')) && $check++);
 			break;
 		default:
 			stop('Unknown connector type', $line);
 	}
 	if(trim($pieces[2]) !== '') {
 		$pieces[2] = trim($pieces[2]);
-		$subpieces = explode(' ', $pieces[2],2);
+		$subpieces = explode(' ', $pieces[2], 2);
 		assert(count($subpieces) > 0);
 
 		if($subpieces[0] === 'WesternDigital') {
@@ -955,7 +1032,8 @@ while(($line = fgets($files['hdd'])) !== false) {
 	}
 
 	if($pieces[3] === '') {
-		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check', 'missing-data')) && $check++);
+		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
+				'missing-data')) && $check++);
 	} else {
 		$thing = trim($pieces[3]);
 		if(strpos($thing, ',') > -1) {
@@ -970,7 +1048,8 @@ while(($line = fgets($files['hdd'])) !== false) {
 	$pieces[4] === '' ?: $in->addFeature(new Feature('spin-rate-rpm', (int) $pieces[4]));
 
 	if($pieces[5] === '') {
-		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check', 'missing-data')) && $check++);
+		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
+				'missing-data')) && $check++);
 	} else {
 		$in->addFeature(new Feature('sn', $pieces[5]));
 	}
@@ -1039,6 +1118,13 @@ while(($line = fgets($files['odd'])) !== false) {
 			$in->addFeature(new Feature('sata-ports-n', 1));
 			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
 			break;
+		case 'JAE (slim)':
+			$in->addFeature(new Feature('jae-ports-n', 1));
+			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
+			break;
+		case '? (slim)':
+			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
+			break;
 		case 'Proprietario':
 			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
 			break;
@@ -1048,11 +1134,12 @@ while(($line = fgets($files['odd'])) !== false) {
 
 	if($pieces[2] !== '') {
 		$type = strtolower(trim($pieces[2])) . '-' . strtolower(trim($pieces[3]));
-		$subpieces = explode(' ', $pieces[2],2);
+		$subpieces = explode(' ', $pieces[2], 2);
 		assert(count($subpieces) > 0);
 		$in->addFeature(new Feature('odd-type', $type));
 	} else {
-		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check', 'missing-data')) && $check++);
+		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
+				'missing-data')) && $check++);
 	}
 
 
@@ -1062,7 +1149,8 @@ while(($line = fgets($files['odd'])) !== false) {
 
 
 	if($pieces[7] === '') {
-		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check', 'missing-data')) && $check++);
+		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
+				'missing-data')) && $check++);
 	} else {
 		if($pieces[7] !== '-') {
 			$in->addFeature(new Feature('sn', $pieces[7]));
@@ -1083,7 +1171,7 @@ $header = explode('|', $header);
 $counter = 0;
 while(($line = fgets($files['input'])) !== false) {
 	if(strstr($line, '!|||||||||||') > -1) {
-		echo 'Skipping comment on keyboards...'.PHP_EOL;
+		echo 'Skipping comment on keyboards...' . PHP_EOL;
 		continue;
 	}
 	$pieces = nuke($line, count($header));
@@ -1133,7 +1221,7 @@ while(($line = fgets($files['input'])) !== false) {
 	$missing = $pieces[9] === 'Perso' || $pieces[9] === 'Duplicato';
 	$noserial = $pieces[8] === '';
 	$wrongcode = $pieces[0]{1} === 'A';
-	
+
 	if($missing) {
 		if($noserial || $wrongcode) {
 			$in->addFeature(new Feature('check', 'wrong-location-and-data'));
@@ -1187,6 +1275,9 @@ while(($line = fgets($files['cards'])) !== false) {
 		case 'WiFi':
 			$in->addFeature(new Feature('type', 'wifi-card'));
 			break;
+		case 'Bluetooth':
+			$in->addFeature(new Feature('type', 'bluetooth-card'));
+			break;
 		case 'SCSI':
 			$in->addFeature(new Feature('type', 'scsi-card'));
 			break;
@@ -1194,24 +1285,25 @@ while(($line = fgets($files['cards'])) !== false) {
 			$in->addFeature(new Feature('type', 'ports-bracket'));
 			break;
 		default:
-		stop('Unknown type: ' . $pieces[1], $line);
+			stop('Unknown type: ' . $pieces[1], $line);
 	}
 
 	$hasports = false;
 	// It's as wonderful and dreadful as it looks.
-	$pieces[2]  === '' ?: $in->addFeature(new Feature('ethernet-ports-10m-n', (int) $pieces[2])) && $hasports = true;
-	$pieces[3]  === '' ?: $in->addFeature(new Feature('ethernet-ports-100m-n', (int) $pieces[3])) && $hasports = true;
-	$pieces[4]  === '' ?: $in->addFeature(new Feature('ethernet-ports-1000m-n', (int) $pieces[4])) && $hasports = true;
-	$pieces[5]  === '' ?: $in->addFeature(new Feature('ethernet-ports-10base2-bnc-n', (int) $pieces[5])) && $hasports = true;
-	$pieces[6]  === '' ?: $in->addFeature(new Feature('ethernet-ports-10base5-aui-n', (int) $pieces[6])) && $hasports = true;
-	$pieces[7]  === '' ?: $in->addFeature(new Feature('rj11-ports-n', (int) $pieces[7])) && $hasports = true;
-	$pieces[8]  === '' ?: $in->addFeature(new Feature('midi-ports-n', (int) $pieces[8])) && $hasports = true;
-	$pieces[9]  === '' ?: $in->addFeature(new Feature('mini-jack-ports-n', (int) $pieces[9])) && $hasports = true;
+	$pieces[2] === '' ?: $in->addFeature(new Feature('ethernet-ports-10m-n', (int) $pieces[2])) && $hasports = true;
+	$pieces[3] === '' ?: $in->addFeature(new Feature('ethernet-ports-100m-n', (int) $pieces[3])) && $hasports = true;
+	$pieces[4] === '' ?: $in->addFeature(new Feature('ethernet-ports-1000m-n', (int) $pieces[4])) && $hasports = true;
+	$pieces[5] === '' ?: $in->addFeature(new Feature('ethernet-ports-10base2-bnc-n',
+			(int) $pieces[5])) && $hasports = true;
+	$pieces[6] === '' ?: $in->addFeature(new Feature('ethernet-ports-10base5-aui-n',
+			(int) $pieces[6])) && $hasports = true;
+	$pieces[7] === '' ?: $in->addFeature(new Feature('rj11-ports-n', (int) $pieces[7])) && $hasports = true;
+	$pieces[8] === '' ?: $in->addFeature(new Feature('midi-ports-n', (int) $pieces[8])) && $hasports = true;
+	$pieces[9] === '' ?: $in->addFeature(new Feature('mini-jack-ports-n', (int) $pieces[9])) && $hasports = true;
 	$pieces[10] === '' ?: $in->addFeature(new Feature('rca-mono-ports-n', (int) $pieces[10])) && $hasports = true;
 	$pieces[11] === '' ?: $in->addFeature(new Feature('dvi-ports-n', (int) $pieces[11])) && $hasports = true;
 	$pieces[12] === '' ?: $in->addFeature(new Feature('dms-59-ports-n', (int) $pieces[12])) && $hasports = true;
 	$pieces[13] === '' ?: $in->addFeature(new Feature('vga-ports-n', (int) $pieces[13])) && $hasports = true;
-	$pieces[14] === '' ?: $in->addFeature(new Feature('s-video-ports-n', (int) $pieces[14])) && $hasports = true;
 	$pieces[15] === '' ?: $in->addFeature(new Feature('tv-out-ports-n', (int) $pieces[15])) && $hasports = true;
 	$pieces[16] === '' ?: $in->addFeature(new Feature('usb-ports-n', (int) $pieces[16])) && $hasports = true;
 	$pieces[17] === '' ?: $in->addFeature(new Feature('serial-ports-n', (int) $pieces[17])) && $hasports = true;
@@ -1219,9 +1311,20 @@ while(($line = fgets($files['cards'])) !== false) {
 	$pieces[19] === '' ?: $in->addFeature(new Feature('firewire-ports-n', (int) $pieces[19])) && $hasports = true;
 	$pieces[20] === '' ?: $in->addFeature(new Feature('scsi-db68-ports-n', (int) $pieces[20])) && $hasports = true;
 
+	if($pieces[14] !== '') {
+		if(is_numeric($pieces[14])) {
+			$in->addFeature(new Feature('s-video-ports-n', (int) $pieces[14])) && $hasports = true;
+		} else if($pieces[14] === 'Analogico') {
+			// This is often called S-Video for no apparent reason, since it's a different connector
+			$in->addFeature(new Feature('composite-video-ports-n', (int) $pieces[14])) && $hasports = true;
+		} else {
+			stop('Lolwut s-video?', $line);
+		}
+	}
+
 	// lacchezzo estremo
 	if(trim(strtoupper($pieces[28])) === 'EMILIA') {
-		echo 'Patching EMILIA graphics card features...'.PHP_EOL;
+		echo 'Patching EMILIA graphics card features...' . PHP_EOL;
 		$in->addFeature(new Feature('displayport-ports-n', 2));
 	}
 
@@ -1241,15 +1344,20 @@ while(($line = fgets($files['cards'])) !== false) {
 		case 'Mini PCIe':
 			$in->addFeature(new Feature('mini-pcie-sockets-n', 1));
 			break;
+		case 'Mini PCI':
+			$in->addFeature(new Feature('mini-pci-sockets-n', 1));
+			break;
+		case 'Proprietario':
 		case '-':
 		case '':
 			break;
 		default:
-			stop('Unknown connector: ' . $pieces[1], $line);
+			stop('Unknown connector: ' . $pieces[21], $line);
 	}
 	$pieces[22] === '' ?: $in->addFeature(new Feature('brand', $pieces[22]));
 	$pieces[23] === '' ?: $in->addFeature(new Feature('model', $pieces[23]));
-	$pieces[24] === '' ?: $in->addFeature(new Feature('capacity-byte', 1024 * 1024 * (int) $pieces[24])); // video RAM (for graphics cards)
+	$pieces[24] === '' ?: $in->addFeature(new Feature('capacity-byte',
+		1024 * 1024 * (int) $pieces[24])); // video RAM (for graphics cards)
 	working($in, $pieces[25], $line);
 	($pieces[26] === '' || $pieces[26] === '-') ?: $in->addFeature(new Feature('sn', $pieces[26]));
 	$pieces[27] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[27])));
@@ -1286,7 +1394,8 @@ while(($line = fgets($files['psu'])) !== false) {
 	if(trim($pieces[1]) === '-' || $pieces[4] === 'Dell DA-2') {
 		$in->addFeature(new Feature('type', 'external-psu'));
 		$pieces[2] === '' ? $missing = true : $in->addFeature(new Feature('psu-volt', (int) $pieces[2]));
-		$pieces[3] === '' ? $missing = true : $in->addFeature(new Feature('psu-ampere', (int) $pieces[3])); // sometimes these are fractional, but that isn't representable in database right now...
+		$pieces[3] === '' ? $missing = true : $in->addFeature(new Feature('psu-ampere',
+			(int) $pieces[3])); // sometimes these are fractional, but that isn't representable in database right now...
 		if(trim($pieces[4]) === '?') {
 			$missing = true;
 		} else {
@@ -1303,7 +1412,8 @@ while(($line = fgets($files['psu'])) !== false) {
 		if(trim($pieces[5]) === '-') {
 			stop('PCIe power pins set to "not applicable" for internal PSU', $line);
 		} else {
-			trim($pieces[5]) === '' ? $missing = true : $in->addFeature(new Feature('pcie-power-pin-n', (int) trim($pieces[5])));
+			trim($pieces[5]) === '' ? $missing = true : $in->addFeature(new Feature('pcie-power-pin-n',
+				(int) trim($pieces[5])));
 		}
 		if(trim($pieces[4]) === '?') {
 			$missing = true;
@@ -1440,13 +1550,13 @@ while(($line = fgets($files['other'])) !== false) {
 $files['other'] = $counter;
 unset($in);
 
-echo 'Number of items (hopefully) correctly processed:'.PHP_EOL;
+echo 'Number of items (hopefully) correctly processed:' . PHP_EOL;
 print_r($files);
 $total = 0;
 foreach($files as $counter) {
 	$total += $counter;
 }
-printf("Items that need manual adjustments: %d of %d (%-4.1f%%)\n", $check, $total, 100*($check/$total));
+printf("Items that need manual adjustments: %d of %d (%-4.1f%%)\n", $check, $total, 100 * ($check / $total));
 
 //echo 'Owners statistics:'.PHP_EOL;
 //arsort($owners);
@@ -1459,35 +1569,37 @@ file_put_contents('../database.generated.json', json_encode($polito, JSON_PRETTY
 // Stop here to see what has been parsed without importing into database
 //exit(0);
 
-echo 'Connecting to database...'.PHP_EOL;
-$dbr  = new \ReflectionObject($db);
+echo 'Connecting to database...' . PHP_EOL;
+$dbr = new \ReflectionObject($db);
 $method = $dbr->getMethod('getPDO');
 $method->setAccessible(true);
 $pdo = $method->invoke($db);
 /**
  * @var $pdo \PDO
  */
-echo 'Rebuilding database...'.PHP_EOL;
+echo 'Rebuilding database...' . PHP_EOL;
 $pdo->exec('DROP DATABASE IF EXISTS ' . DBNAME);
 $pdo->exec('CREATE DATABASE ' . DBNAME . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
 $pdo->exec('USE ' . DBNAME);
 $pdo->exec(file_get_contents('database.sql'));
 $pdo->exec(file_get_contents('database-data.sql'));
-$pdo->exec('INSERT INTO `User` (`UserID`, `Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
-(0,	\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', 1507496724,	1)');
-$pdo->exec('INSERT INTO `User` (`UserID`, `Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
-(1,	\'asd\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'asd\', 1507496724,	1)');
+$pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
+(\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', 1507496724, 1)');
+$pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
+(\'asd\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'asd\', 1507496724, 1)');
 
-echo 'Importing Item tree...'.PHP_EOL;
+echo 'Importing Item tree...' . PHP_EOL;
 try {
 	$db->beginTransaction();
-	$db->itemDAO()->addItems($polito);
+	$db->itemDAO()->addItem($polito);
+	echo 'COMMIT!' . PHP_EOL;
 	$pdo->commit();
 } catch(Exception $e) {
+	echo 'ROLLBACK!' . PHP_EOL;
 	$db->rollback();
 	throw $e;
 }
 // Doesn't work but import succeeds anyway
 //$db->modificationDAO()->modificationCommit();
 
-echo 'THE END'.PHP_EOL;
+echo 'Done.' . PHP_EOL;
