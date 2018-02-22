@@ -21,6 +21,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "adminer", type: "shell", path: "./provision/adminer.sh"
   config.vm.provision "db", type: "shell", path: "./provision/db.sh"
   config.vm.provision "db-test", type: "shell", path: "./provision/dbtest.sh"
-  config.vm.provision "shell", path: "./provision/deps.sh"
+  config.vm.provision "db-procedures", type: "shell", path: "./provision/dbproc.sh"
+  config.vm.provision "deps", type: "shell", path: "./provision/deps.sh"
 
 end
