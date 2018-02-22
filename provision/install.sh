@@ -4,6 +4,10 @@ set -e
 
 DOCUMENT_ROOT="/var/www/html"
 
+echo "Creating a directory for no reason..."
+mkdir /home/ubuntu/.phpstorm_helpers
+chmod 777 /home/ubuntu/.phpstorm_helpers
+
 export DEBIAN_FRONTEND="noninteractive"
 debconf-set-selections <<< 'mariadb-server-10.2 mysql-server/root_password password root'
 debconf-set-selections <<< 'mariadb-server-10.2 mysql-server/root_password_again password root'
