@@ -13,12 +13,13 @@ and you will get:
 
 * a client instance running at `127.0.0.1:8080/tarallo`
 * a server one instance at `127.0.0.1:8080/server`
-* Xdebug enabled by default with IDE key `vagrant` (or use 
-`?XDEBUG_SESSION_START=whatever` to set another IDE key)
+* Xdebug enabled by default, set PHPStorm or any other IDE to listen for connection and
+your'e done
 * Adminer at `127.0.0.1:8080/adminer.php` for database inspection (user: root, 
 password: root, server: localhost:3306)
 * database accessible externally by root at `127.0.0.1:3307` (note the non-standard port)
-* some sample data, which right now is only 4 users and that's it (user: `asd`, password: `asd`, all users have password `asd`)
+* some sample data, which right now is only 4 users and that's it
+(user: `asd`, password: `asd`, all users have password `asd`)
 
 If port gets changed from 8080 to anything else by Vagrant, no manual adjustments should
 be necessary but it hasn't been tested.

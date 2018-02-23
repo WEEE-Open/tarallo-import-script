@@ -38,7 +38,6 @@ cat << 'EOF' > "/etc/php/7.0/mods-available/xdebug.ini"
 zend_extension = xdebug.so
 xdebug.remote_enable = on
 xdebug.remote_connect_back = on
-xdebug.idekey = "vagrant"
 EOF
 cat << 'EOF' > "/etc/apache2/conf-available/allow-htacess.conf"
 <Directory /var/www/html/>
