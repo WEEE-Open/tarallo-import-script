@@ -510,6 +510,9 @@ while(($line = fgets($files['case'])) !== false) {
 			$in->addFeature(new Feature('color',
 				'yellowed')); // What's up with all those colorful motherboards inside cheap yellowed cases?
 			break;
+		case 'P5QPL-AM':
+			$mobo->addFeature(new Feature('color', 'brown'));
+			$in->addFeature(new Feature('color', 'black'));
 		case 'K7VT4A+':
 			$mobo->addFeature(new Feature('color', 'blue'));
 			$in->addFeature(new Feature('color', 'yellowed'));
@@ -775,6 +778,7 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'Integrata (mobo)':
 		case 'SG30': // little exception for one of the few PCs with integrated and discrete graphics. BTW, the discrete one is completely broken.
 		case 'SG50':
+		case 'SG34':
 			$gpu = new Item('SG' . ++$gpuid);
 			isduplicate($gpu->getCode(), $line);
 			// TODO: replace this soldered-in-place item with Product
