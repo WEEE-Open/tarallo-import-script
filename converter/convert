@@ -358,6 +358,14 @@ function psupls(Item $in, $psustring, $line) {
 			$formfactor = 'atx';
 			$powerconnector = 'c13';
 			break;
+		case 'SFX-L 24 + 4':
+			// An hot (and apparently not covered by any public specification) format for modern slim PCs, whatever that means.
+			// Also, we have a PSU from 2009 with that exact form factor, so it's not really that modern.
+			$mobopin = 'atx-24pin';
+			$cpupin = '4pin';
+			$formfactor = 'sfx-l';
+			$powerconnector = 'c13';
+			break;
 		case 'Proprietario interno':
 			$mobopin = 'proprietary';
 			$cpupin = 'proprietary';
@@ -513,6 +521,7 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'P5QPL-AM':
 			$mobo->addFeature(new Feature('color', 'brown'));
 			$in->addFeature(new Feature('color', 'black'));
+			break;
 		case 'K7VT4A+':
 			$mobo->addFeature(new Feature('color', 'blue'));
 			$in->addFeature(new Feature('color', 'yellowed'));
@@ -1586,6 +1595,7 @@ $pdo->exec('DROP DATABASE IF EXISTS ' . DBNAME);
 $pdo->exec('CREATE DATABASE ' . DBNAME . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
 $pdo->exec('USE ' . DBNAME);
 $pdo->exec(file_get_contents('database.sql'));
+$pdo->exec(file_get_contents('database-procedures.sql'));
 $pdo->exec(file_get_contents('database-data.sql'));
 $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
 (\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', 1507496724, 1)');
