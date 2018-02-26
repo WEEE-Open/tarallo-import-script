@@ -551,11 +551,50 @@ while(($line = fgets($files['case'])) !== false) {
 	foreach($ports as $pos => $type) {
 		if($pieces[$pos] !== '') {
 			$howmanyports++;
-			if($pieces[$pos] !== '0') {
-				if($type === 'pcie-ports-n' && $pieces[$pos] === 'mini') {
-					$mobo->addFeature(new Feature('mini-pcie-sockets-n', 1));
-				} else {
-					$mobo->addFeature(new Feature($type, (int) $pieces[$pos]));
+			if($pieces[$pos] === '0') {
+				continue;
+			}
+
+			if(is_numeric($pieces[$pos])) {
+				$mobo->addFeature(new Feature($type, (int) $pieces[$pos]));
+			} else {
+				$value = $pieces[$pos];
+				$decoded = false;
+				switch($pos) {
+					case 14:
+						if($value === 'mini') {
+							$mobo->addFeature(new Feature('mini-pci-sockets-n', 1));
+							$decoded = true;
+						}
+						break;
+					case 15:
+						if($value === 'mini') {
+							$mobo->addFeature(new Feature('mini-pcie-sockets-n', 1));
+							$decoded = true;
+						}
+						break;
+					case 16:
+						if($value === '6xSCA2') {
+							$mobo->addFeature(new Feature('scsi-sca2-ports-n', 6));
+							$decoded = true;
+						}
+						break;
+					case 18:
+						if($value === '1+S-Video') {
+							$mobo->addFeature(new Feature('vga-ports-n', 1));
+							$mobo->addFeature(new Feature('s-video-ports-n', 1));
+							$decoded = true;
+						}
+						break;
+					case 24:
+						if($value === 'mini') {
+							$mobo->addFeature(new Feature('mini-firewire-ports-n', 1));
+							$decoded = true;
+						}
+						break;
+				}
+				if(!$decoded) {
+					stop("Cannot decode value $value for $type", $line);
 				}
 			}
 		}
@@ -716,6 +755,10 @@ while(($line = fgets($files['case'])) !== false) {
 				case 'mPGA478C':
 					$cpu->addFeature(new Feature('cpu-socket', 'socket479c'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket479c'));
+					break;
+				case '370':
+					$cpu->addFeature(new Feature('cpu-socket', 'socket370'));
+					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket370'));
 					break;
 				case '462 (A)':
 					$cpu->addFeature(new Feature('cpu-socket', 'socket462a'));
@@ -1135,7 +1178,8 @@ while(($line = fgets($files['odd'])) !== false) {
 			$in->addFeature(new Feature('jae-ports-n', 1));
 			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
 			break;
-		case '? (slim)':
+		case 'SCSI (slim)':
+			$in->addFeature(new Feature('scsi-sca2-ports-n', 1));
 			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
 			break;
 		case 'Proprietario':
@@ -1306,10 +1350,8 @@ while(($line = fgets($files['cards'])) !== false) {
 	$pieces[2] === '' ?: $in->addFeature(new Feature('ethernet-ports-10m-n', (int) $pieces[2])) && $hasports = true;
 	$pieces[3] === '' ?: $in->addFeature(new Feature('ethernet-ports-100m-n', (int) $pieces[3])) && $hasports = true;
 	$pieces[4] === '' ?: $in->addFeature(new Feature('ethernet-ports-1000m-n', (int) $pieces[4])) && $hasports = true;
-	$pieces[5] === '' ?: $in->addFeature(new Feature('ethernet-ports-10base2-bnc-n',
-			(int) $pieces[5])) && $hasports = true;
-	$pieces[6] === '' ?: $in->addFeature(new Feature('ethernet-ports-10base5-aui-n',
-			(int) $pieces[6])) && $hasports = true;
+	$pieces[5] === '' ?: $in->addFeature(new Feature('ethernet-ports-10base2-bnc-n', (int) $pieces[5])) && $hasports = true;
+	$pieces[6] === '' ?: $in->addFeature(new Feature('ethernet-ports-10base5-aui-n',	(int) $pieces[6])) && $hasports = true;
 	$pieces[7] === '' ?: $in->addFeature(new Feature('rj11-ports-n', (int) $pieces[7])) && $hasports = true;
 	$pieces[8] === '' ?: $in->addFeature(new Feature('midi-ports-n', (int) $pieces[8])) && $hasports = true;
 	$pieces[9] === '' ?: $in->addFeature(new Feature('mini-jack-ports-n', (int) $pieces[9])) && $hasports = true;
