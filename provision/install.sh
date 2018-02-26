@@ -31,21 +31,3 @@ systemctl start mariadb
 
 # Remove root password from db:
 #mysql -uroot -proot -e "SET PASSWORD = PASSWORD('');"
-
-echo "Doing stuff with Apache..."
-
-cat << 'EOF' > "/etc/php/7.0/mods-available/xdebug.ini"
-zend_extension = xdebug.so
-xdebug.remote_enable = on
-xdebug.remote_connect_back = on
-EOF
-cat << 'EOF' > "/etc/apache2/conf-available/allow-htacess.conf"
-<Directory /var/www/html/>
-AllowOverride All
-</Directory>
-EOF
-a2enconf "allow-htacess"
-a2enmod rewrite
-phpenmod xdebug
-rm "$DOCUMENT_ROOT/index.html"
-systemctl restart apache2

@@ -8,9 +8,10 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder ".", "/vagrant", disabled: true
   config.vm.synced_folder "./data", "/data"
   config.vm.synced_folder "./tarallo-backend", "/var/www/html/server"
-  config.vm.synced_folder "./tarallo-frontend", "/var/www/html/tarallo"
+  #config.vm.synced_folder "./tarallo-frontend", "/var/www/html/tarallo"
 
   config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 81, host: 8081, host_ip: "127.0.0.1"
   config.vm.network "forwarded_port", guest: 3306, host: 3307, host_ip: "127.0.0.1"
 
   config.vm.provider "virtualbox" do |v|
@@ -18,6 +19,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision "shell", path: "./provision/install.sh"
+  config.vm.provision "apache", type: "shell", path: "./provision/apache.sh"
   config.vm.provision "adminer", type: "shell", path: "./provision/adminer.sh"
   config.vm.provision "db", type: "shell", path: "./provision/db.sh"
   config.vm.provision "db-test", type: "shell", path: "./provision/dbtest.sh"

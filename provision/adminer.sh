@@ -4,9 +4,11 @@ set -e
 
 DOCUMENT_ROOT="/var/www/html"
 
-# Always useful to have
+echo "Creating Adminer directory..."
+mkdir -p "$DOCUMENT_ROOT/admin"
+
 echo "Installing Adminer..."
-wget -O "$DOCUMENT_ROOT/adminer.php" https://github.com/vrana/adminer/releases/download/v4.3.1/adminer-4.3.1-mysql-en.php
+wget -O "$DOCUMENT_ROOT/admin/adminer.php" https://github.com/vrana/adminer/releases/download/v4.3.1/adminer-4.3.1-mysql-en.php
 # wget -O "$DOCUMENT_ROOT/adminer.php" https://github.com/vrana/adminer/releases/download/v4.6.1/adminer-4.6.1-en.php
 chown www-data:www-data "$DOCUMENT_ROOT/adminer.php"
 
