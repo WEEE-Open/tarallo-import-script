@@ -1637,12 +1637,12 @@ $pdo->exec('DROP DATABASE IF EXISTS ' . DBNAME);
 $pdo->exec('CREATE DATABASE ' . DBNAME . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
 $pdo->exec('USE ' . DBNAME);
 $pdo->exec(file_get_contents('database.sql'));
-$pdo->exec(file_get_contents('database-procedures.sql'));
 $pdo->exec(file_get_contents('database-data.sql'));
 $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
 (\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', 1507496724, 1)');
 $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
 (\'asd\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'asd\', 1507496724, 1)');
+$pdo->exec(file_get_contents('database-procedures.sql')); // TODO: try to understand why this has to be the last
 
 echo 'Importing Item tree...' . PHP_EOL;
 try {
