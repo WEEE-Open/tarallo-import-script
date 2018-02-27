@@ -679,25 +679,23 @@ while(($line = fgets($files['case'])) !== false) {
 			$in->addFeature(new Feature('motherboard-form-factor', $f));
 			$needfixup = true;
 			break;
-		case 'MiniATX':
-			$f = 'miniatx';
+		case 'MicroATX':
+			$f = 'microatx';
 			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
 			switch($mobomodel) {
 				case '0A58h':
 				case '085Ch':
-				case 'P4P800-MX':
+				case '09F0h':
 					echo 'Shimming the shim out of weird HP Compaq motherboard + case combos...' . PHP_EOL;
+					$in->addFeature(new Feature('motherboard-form-factor', 'atx'));
+					break;
+				case 'P4P800-MX':
+					echo 'Shimming the shim out of Frankenstein\'s pc...' . PHP_EOL;
 					$in->addFeature(new Feature('motherboard-form-factor', 'atx'));
 					break;
 				default:
 					$in->addFeature(new Feature('motherboard-form-factor', $f));
 			}
-			$needfixup = true;
-			break;
-		case 'MicroATX':
-			$f = 'microatx';
-			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
-			$in->addFeature(new Feature('motherboard-form-factor', $f));
 			$needfixup = true;
 			break;
 		case 'MiniITX':
@@ -959,8 +957,8 @@ while(($line = fgets($files['monitor'])) !== false) {
 		$power = explode('/', $pieces[13], 2);
 		if(count($power) === 2) {
 			$in->addFeature(new Feature('power-connector', 'barrel'));
-			$in->addFeature(new Feature('psu-volt', (int) trim($power[0])));
-			$in->addFeature(new Feature('psu-ampere', (int) trim($power[1])));
+			$in->addFeature(new Feature('psu-volt', (double) trim($power[0])));
+			$in->addFeature(new Feature('psu-ampere', (double) trim($power[1])));
 		} else {
 			$in->addFeature(new Feature('power-connector', 'c13'));
 		}
@@ -1465,9 +1463,8 @@ while(($line = fgets($files['psu'])) !== false) {
 
 	if(trim($pieces[1]) === '-' || $pieces[4] === 'Dell DA-2') {
 		$in->addFeature(new Feature('type', 'external-psu'));
-		$pieces[2] === '' ? $missing = true : $in->addFeature(new Feature('psu-volt', (int) $pieces[2]));
-		$pieces[3] === '' ? $missing = true : $in->addFeature(new Feature('psu-ampere',
-			(int) $pieces[3])); // sometimes these are fractional, but that isn't representable in database right now...
+		$pieces[2] === '' ? $missing = true : $in->addFeature(new Feature('psu-volt', (double) $pieces[2]));
+		$pieces[3] === '' ? $missing = true : $in->addFeature(new Feature('psu-ampere', (double) $pieces[3]));
 		if(trim($pieces[4]) === '?') {
 			$missing = true;
 		} else {
@@ -1639,7 +1636,7 @@ printf("Items that need manual adjustments: %d of %d (%-4.1f%%)\n", $check, $tot
 file_put_contents('../database.generated.json', json_encode($polito, JSON_PRETTY_PRINT));
 
 // Stop here to see what has been parsed without importing into database
-//exit(0);
+// exit(0);
 
 echo 'Connecting to database...' . PHP_EOL;
 $dbr = new \ReflectionObject($db);
@@ -1650,6 +1647,19 @@ $pdo = $method->invoke($db);
  * @var $pdo \PDO
  */
 echo 'Rebuilding database...' . PHP_EOL;
+
+// Apparently, the mysql.proc table sometimes crashes randomly and procedures cannot be added anymore.
+// Why that happens, and why is uses MyISAM instead of InnoDB, is still a mystery
+$pdo->exec('USE ' . DBNAME);
+$pdo->exec('DROP FUNCTION IF EXISTS GenerateCode;
+DROP PROCEDURE IF EXISTS SetUser;
+DROP FUNCTION IF EXISTS GetParent;
+DROP TRIGGER IF EXISTS SearchResultsDelete;
+DROP TRIGGER IF EXISTS SearchResultsUpdate;
+DROP TRIGGER IF EXISTS SearchResultsInsert;
+DROP TRIGGER IF EXISTS SetRealSearchResultTimestampBecauseMySQLCant;
+DROP PROCEDURE IF EXISTS RefreshSearch;');
+
 $pdo->exec('DROP DATABASE IF EXISTS ' . DBNAME);
 $pdo->exec('CREATE DATABASE ' . DBNAME . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
 $pdo->exec('USE ' . DBNAME);
@@ -1659,7 +1669,7 @@ $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, 
 (\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', 1507496724, 1)');
 $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
 (\'asd\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'asd\', 1507496724, 1)');
-$pdo->exec(file_get_contents('database-procedures.sql')); // TODO: try to understand why this has to be the last
+$pdo->exec(file_get_contents('database-procedures.sql')); // TODO: se if this works, now (if mysql.proc is crashed, the query correctly completes without doing anything)
 
 echo 'Importing Item tree...' . PHP_EOL;
 try {
