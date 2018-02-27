@@ -131,10 +131,6 @@ $armadior->addContent($scatolaRAM);
 $tavolo->addContent($sottoaltavolo);
 $otherContainers = []; // Cases contain every kind of item, motherboards "contain" RAM sticks and CPUs
 
-// TODO: remove later
-$otherContainers['93'] = (new Item('93'))->addFeature(new Feature('type', 'case'));
-$chernobyl->addContent($otherContainers['93']);
-
 function placeinto(Item $item, $parent, $line, $container = false) {
 	global $otherContainers;
 	if($container) {
