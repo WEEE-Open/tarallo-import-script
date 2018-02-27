@@ -14,6 +14,7 @@ server {
 	root /var/www/html/server;
 	index index.php;
 	server_name _;
+	sendfile off; # broken in virtualbox
 
 	location ~ \.(css|js)$ {
 		# There has to be an easier way.
@@ -36,6 +37,7 @@ server {
 	listen 81 default_server;
 	root /var/www/html/admin;
 	server_name _;
+	sendfile off; # broken in virtualbox
 
 	location / {
 		autoindex on;
