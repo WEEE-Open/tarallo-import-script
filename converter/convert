@@ -526,6 +526,10 @@ while(($line = fgets($files['case'])) !== false) {
 			$mobo->addFeature(new Feature('color', 'blue'));
 			$in->addFeature(new Feature('color', 'yellowed'));
 			break;
+		case 'E61ML':
+			$mobo->addFeature(new Feature('color', 'purple'));
+			$in->addFeature(new Feature('color', 'yellowed'));
+			break;
 		case 'Processor Board (1998)':
 			$mobo->addFeature(new Feature('color', 'yellow'));
 			$mobo->addFeature(new Feature('isa-sockets-n', 2));
@@ -675,6 +679,7 @@ while(($line = fgets($files['case'])) !== false) {
 			switch($mobomodel) {
 				case '0A58h':
 				case '085Ch':
+				case 'P4P800-MX':
 					echo 'Shimming the shim out of weird HP Compaq motherboard + case combos...' . PHP_EOL;
 					$in->addFeature(new Feature('motherboard-form-factor', 'atx'));
 					break;
@@ -831,6 +836,7 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'SG30': // little exception for one of the few PCs with integrated and discrete graphics. BTW, the discrete one is completely broken.
 		case 'SG50':
 		case 'SG34':
+		case 'SG25':
 			$gpu = new Item('SG' . ++$gpuid);
 			isduplicate($gpu->getCode(), $line);
 			// TODO: replace this soldered-in-place item with Product
