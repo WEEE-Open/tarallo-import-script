@@ -19,7 +19,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision "shell", path: "./provision/install.sh"
-  config.vm.provision "apache", type: "shell", path: "./provision/apache.sh"
+  config.vm.provision "nginx", type: "shell", path: "./provision/nginx.sh"
   config.vm.provision "adminer", type: "shell", path: "./provision/adminer.sh"
   config.vm.provision "db", type: "shell", path: "./provision/db.sh"
   config.vm.provision "db-test", type: "shell", path: "./provision/dbtest.sh"
