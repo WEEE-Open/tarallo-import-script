@@ -235,6 +235,10 @@ function colorify(Item $item, $color, $line) {
 			$item->addFeature(new Feature('color', 'grey'));
 
 			return;
+		case 'grigio chiaro':
+			$item->addFeature(new Feature('color', 'lightgrey'));
+
+			return;
 		case 'blu':
 			$item->addFeature(new Feature('color', 'blue'));
 
@@ -366,6 +370,12 @@ function psupls(Item $in, $psustring, $line) {
 			$formfactor = 'sfx-l';
 			$powerconnector = 'c13';
 			break;
+		case 'SFX-topfan 20 + 4':
+			$mobopin = 'atx-20pin';
+			$cpupin = '4pin';
+			$formfactor = 'sfx-topfan';
+			$powerconnector = 'c13';
+			break;
 		case 'Proprietario interno':
 			$mobopin = 'proprietary';
 			$cpupin = 'proprietary';
@@ -388,13 +398,13 @@ function psupls(Item $in, $psustring, $line) {
 			$mobopin = null;
 			$cpupin = null;
 			$formfactor = null;
-			$powerconnector = 'miniusb';
+			$powerconnector = 'da-2';
 			break;
 		case 'Proprietario esterno':
 			$mobopin = null;
 			$cpupin = null;
 			$formfactor = null;
-			$powerconnector = 'da-2';
+			$powerconnector = 'proprietary';
 			break;
 		default:
 			stop('Uknown internal PSU type: ' . $psustring, $line);
@@ -527,7 +537,7 @@ while(($line = fgets($files['case'])) !== false) {
 			$in->addFeature(new Feature('color', 'yellowed'));
 			break;
 		case 'E61ML':
-			$mobo->addFeature(new Feature('color', 'purple'));
+			$mobo->addFeature(new Feature('color', 'violet'));
 			$in->addFeature(new Feature('color', 'yellowed'));
 			break;
 		case 'Processor Board (1998)':
@@ -1378,6 +1388,11 @@ while(($line = fgets($files['cards'])) !== false) {
 		} else if($pieces[14] === 'Analogico') {
 			// This is often called S-Video for no apparent reason, since it's a different connector
 			$in->addFeature(new Feature('composite-video-ports-n', (int) $pieces[14])) && $hasports = true;
+		} else if($pieces[14] === '1+Analogico') {
+			$in->addFeature(new Feature('s-video-ports-n', (int) $pieces[14])) && $hasports = true;
+			$in->addFeature(new Feature('composite-video-ports-n', (int) $pieces[14])) && $hasports = true;
+		} else if($pieces[14] === 'Grande') {
+			$in->addFeature(new Feature('s-video-7pin-ports-n', (int) $pieces[14])) && $hasports = true;
 		} else {
 			stop('Lolwut s-video?', $line);
 		}
