@@ -5,6 +5,8 @@ $data = file_get_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'database-da
 $lines = preg_split('/[\n\r]/', $data, -1, PREG_SPLIT_NO_EMPTY);
 $resultjs = '// BEGIN GENERATED CODE' . PHP_EOL;
 $resultphp = "\t// BEGIN GENERATED CODE" . PHP_EOL . "\tconst features = [" . PHP_EOL;
+$resultlocalized = "\t// BEGIN GENERATED CODE" . PHP_EOL . "\tconst features = [" . PHP_EOL;
+$resultlocalized2 = '';
 
 $block = 0;
 $features = [];
@@ -36,6 +38,8 @@ foreach($lines as $line) {
 			$feature = $id = substr($boom[0], 3, strlen($boom[0]) - 4);
 			$type = substr($boom[1], 1, 1);
 
+			$features[$id] = [];
+
 			if($type === '2') {
 				$resultjs .= 'Features.list.set(\'' . $feature . '\', new Set({REPLACE' . $id . '}));' . PHP_EOL;
 			} else {
@@ -57,22 +61,44 @@ foreach($lines as $line) {
 					break;
 			}
 
-			$features[$id] = [];
-
-			echo 'Feature: ' . $feature . ':' . $type . PHP_EOL;
-		} else if($block === 2) {
-			// last piece
-			if(count($boom) === 2) {
-				$trailing = 5;
+			// Last piece has less fragments since it ends with ; instead of ,
+			$thePiece = isset($boom[2]) ? $boom[2]: $boom[1];
+			$translationPieces = explode('--', $thePiece);
+			if(count($translationPieces) >= 2) {
+				$translation = trim($translationPieces[1]);
 			} else {
-				$trailing = 4;
+				echo "Missing translation for $feature\n";
+				exit(1);
 			}
+
+			$resultlocalized .= "\t\t'$feature' => '$translation'," . PHP_EOL;
+
+			echo "Feature: $feature:$type:$translation" . PHP_EOL;
+		} else if($block === 2) {
 			$id = substr($boom[0], 3, strlen($boom[0]) - 4);
-			$value = substr($boom[1], 2, strlen($boom[1]) - $trailing);
+
+			if(count($boom) === 2) {
+				// Last piece
+				$value = explode(';', $boom[1])[0];
+				$value = substr($value, 2, strlen($value) - 4);
+			} else {
+				$value = substr($boom[1], 2, strlen($boom[1]) - 4);
+			}
 
 			$features[$id][] = $value;
 
-			echo 'Value: ' . $id . ':' . $value . PHP_EOL;
+			$thePiece = isset($boom[2]) ? $boom[2] : $boom[1];
+			$translationPieces = explode('--', $thePiece);
+			if(count($translationPieces) >= 2) {
+				$translation = trim($translationPieces[1]);
+			} else {
+				echo "Missing translation for $id=$value\n";
+				exit(1);
+			}
+
+			$resultlocalized2 .= "\t\t'$id/$value' => '$translation'," . PHP_EOL;
+
+			echo "Value: $id:$value:$translation" . PHP_EOL;
 		} else {
 			echo 'Lolwut?' . PHP_EOL;
 		}
@@ -94,6 +120,12 @@ foreach($features as $id => $values) {
 }
 $resultjs .= '// END GENERATED CODE';
 $resultphp .= "\t];" . PHP_EOL . "\t// END GENERATED CODE";
+
+
+$resultlocalized .= "\t];" . PHP_EOL;
+$resultlocalized2 .= "\t];" . PHP_EOL . "\t// END GENERATED CODE";
+$resultlocalized = implode("\tconst featuresEnum = [\n", [$resultlocalized, $resultlocalized2]);
+unset($resultlocalized2);
 
 // Safer alternative:
 //file_put_contents('features.generated.js', $resultjs);
@@ -127,8 +159,24 @@ if(count($piecesphp2) < 2) {
 	exit(1);
 }
 
+$localized = file_get_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'SSRv1' . DIRECTORY_SEPARATOR . 'Localizer.php');
+
+$pieceslocalized = explode("\t// BEGIN GENERATED CODE" . PHP_EOL, $localized, 2);
+if(count($pieceslocalized) < 2) {
+	echo 'Cannot find // BEGIN GENERATED CODE (indented and followed by a newline in current platform format, which may be the problem) in tarallo-backend/SSRv1/Localizer.php' . PHP_EOL;
+	exit(1);
+}
+
+$pieceslocalized2 = explode("\t// END GENERATED CODE", $localized, 2);
+if(count($pieceslocalized2) < 2) {
+	echo 'Cannot find indented // END GENERATED CODE in tarallo-backend/SSRv1/Localizer.php' . PHP_EOL;
+	exit(1);
+}
+
 file_put_contents('tarallo-frontend' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'features.js',
 	$piecesjs[0] . $resultjs . $piecesjs2[1]);
 file_put_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Feature.php',
 	$piecesphp[0] . $resultphp . $piecesphp2[1]);
-echo 'Done. Check "tarallo-frontend/js/features.js" and "tarallo-backend/src/Feature.php" and commit changes' . PHP_EOL;
+file_put_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'SSRv1' . DIRECTORY_SEPARATOR . 'Localizer.php',
+	$pieceslocalized[0] . $resultlocalized . $pieceslocalized2[1]);
+echo 'Done. Check "tarallo-frontend/js/features.js", "tarallo-backend/src/Feature.php" and "tarallo-backend/SSRv1/Localizer.php" and commit changes' . PHP_EOL;
