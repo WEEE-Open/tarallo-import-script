@@ -1226,13 +1226,8 @@ while(($line = fgets($files['odd'])) !== false) {
 	working($in, $pieces[6], $line);
 
 
-	if($pieces[7] === '') {
-		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
-				'missing-data')) && $check++);
-	} else {
-		if($pieces[7] !== '-') {
-			$in->addFeature(new Feature('sn', $pieces[7]));
-		}
+	if($pieces[7] !== '' && $pieces[7] !== '-') {
+		$in->addFeature(new Feature('sn', $pieces[7]));
 	}
 
 	$pieces[8] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[8])));
@@ -1684,7 +1679,7 @@ $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, 
 (\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', 1507496724, 1)');
 $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
 (\'asd\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'asd\', 1507496724, 1)');
-$pdo->exec(file_get_contents('database-procedures.sql')); // TODO: se if this works, now (if mysql.proc is crashed, the query correctly completes without doing anything)
+// $pdo->exec(file_get_contents('database-procedures.sql')); // TODO: explode() this thing, replace $$ with ;
 
 echo 'Importing Item tree...' . PHP_EOL;
 try {
