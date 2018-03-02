@@ -334,11 +334,18 @@ function psupls(Item $in, $psustring, $line) {
 			$formfactor = 'cfx';
 			$powerconnector = 'c13';
 			break;
-		case 'CFX 24 + 6':
+		case 'CFX 24 + 6 (HP)':
 			$mobopin = 'atx-24pin';
-			$cpupin = '6pin';
+			$cpupin = '6pin-hp';
 			$formfactor = 'cfx';
 			$powerconnector = 'c13';
+			break;
+		case 'ATX 24 + 6?':
+			// I have no idea what this is. HP uses a proprietary 6 pin connector sometimes, but this is a Dell...
+			$mobopin = 'atx-24pin';
+			$cpupin = '6pin';
+			$formfactor = 'atx';
+			$powerconnector = 'c19';
 			break;
 		case 'LFX 20 + 4':
 			$mobopin = 'atx-20pin';
@@ -587,6 +594,9 @@ while(($line = fgets($files['case'])) !== false) {
 						if($value === '6xSCA2') {
 							$mobo->addFeature(new Feature('scsi-sca2-ports-n', 6));
 							$decoded = true;
+						} else if($value === '2xDB68') {
+							$mobo->addFeature(new Feature('scsi-db68-ports-n', 2));
+							$decoded = true;
 						}
 						break;
 					case 18:
@@ -664,6 +674,12 @@ while(($line = fgets($files['case'])) !== false) {
 			break;
 		case 'ATX':
 			$f = 'atx';
+			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
+			$in->addFeature(new Feature('motherboard-form-factor', $f));
+			$needfixup = true;
+			break;
+		case 'WTX':
+			$f = 'wtx';
 			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
 			$in->addFeature(new Feature('motherboard-form-factor', $f));
 			$needfixup = true;
@@ -777,6 +793,14 @@ while(($line = fgets($files['case'])) !== false) {
 					$cpu->addFeature(new Feature('cpu-socket', 'socket479m'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket479m'));
 					break;
+				case '615':
+					$cpu->addFeature(new Feature('cpu-socket', 'socket615'));
+					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket615'));
+					break;
+				case '603':
+					$cpu->addFeature(new Feature('cpu-socket', 'socket603'));
+					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket603'));
+					break;
 				case 'Soldered':
 					// TODO: replace this soldered-in-place item with Product
 					break;
@@ -833,7 +857,6 @@ while(($line = fgets($files['case'])) !== false) {
 		}
 		unset($notes);
 	}
-	unset($cpu);
 
 	switch($pieces[33]) {
 		case 'Integrata (mobo)':
@@ -841,33 +864,23 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'SG50':
 		case 'SG34':
 		case 'SG25':
-			$gpu = new Item('SG' . ++$gpuid);
-			isduplicate($gpu->getCode(), $line);
-			// TODO: replace this soldered-in-place item with Product
-			$gpu->addFeature(new Feature('type', 'graphics-card'));
-			$gpu->addFeature(new Feature('brand', trim($pieces[34])));
-			$gpu->addFeature(new Feature('model', trim($pieces[35])));
-			$mobo->addContent($gpu);
-			$counter++;
+			$mobo->addFeature(new Feature('integrated-graphics-brand', trim($pieces[34])));
+			$mobo->addFeature(new Feature('integrated-graphics-model', trim($pieces[35])));
 			break;
 		case 'Integrata (CPU)':
-			$gpu = new Item('SG' . ++$gpuid);
-			isduplicate($gpu->getCode(), $line);
-			// TODO: replace this soldered-in-place item with Product
-			$gpu->addFeature(new Feature('type', 'graphics-card'));
-			$gpu->addFeature(new Feature('brand', trim($pieces[34])));
-			$gpu->addFeature(new Feature('model', trim($pieces[35])));
-			$cpu->addContent($gpu);
+			$cpu->addFeature(new Feature('integrated-graphics-brand', trim($pieces[34])));
+			$cpu->addFeature(new Feature('integrated-graphics-model', trim($pieces[35])));
 			break;
 		case '':
 			break;
 		default:
 			/** @noinspection PhpStatementHasEmptyBodyInspection */
 			if(substr($pieces[33], 0, 2) !== 'SG') {
-				//echo 'Warning: integrated graphics incompletely inventoried, value: ' . $pieces[33].PHP_EOL;
+				echo 'Warning: integrated graphics incompletely inventoried, value: ' . $pieces[33].PHP_EOL;
 				// TODO: turn into a stop()
 			}
 	}
+	unset($cpu);
 
 	$psucode = trim($pieces[38]);
 	if(substr($psucode, 0, 1) === 'A') {
@@ -1071,11 +1084,9 @@ while(($line = fgets($files['hdd'])) !== false) {
 			array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
 					'wrong-location')) && $check++);
 			break;
-		case 'SCSI':
+		case 'SCSI SCA2':
 			$in->addFeature(new Feature('scsi-sca2-ports-n', 1));
 			$in->addFeature(new Feature('hdd-odd-form-factor', '3.5'));
-			array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
-					'wrong-data')) && $check++);
 			break;
 		default:
 			stop('Unknown connector type', $line);
@@ -1348,6 +1359,9 @@ while(($line = fgets($files['cards'])) !== false) {
 		case 'SCSI':
 			$in->addFeature(new Feature('type', 'scsi-card'));
 			break;
+		case 'TV':
+			$in->addFeature(new Feature('type', 'tv-card'));
+			break;
 		case 'Bracket':
 			$in->addFeature(new Feature('type', 'ports-bracket'));
 			break;
@@ -1457,6 +1471,7 @@ while(($line = fgets($files['psu'])) !== false) {
 
 	switch($in->getCode()) {
 		case 'A64':
+		case 'A76':
 			$in->addFeature(new Feature('color', 'golden'));
 			break;
 	}
