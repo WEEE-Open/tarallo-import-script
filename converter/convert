@@ -482,6 +482,7 @@ while(($line = fgets($files['case'])) !== false) {
 		stop('Invalid code', $line);
 	}
 	isduplicate($in->getCode(), $line);
+	$in->addFeature(new Feature('type', 'case'));
 	$otherContainers[$in->getCode()] = $in;
 
 	trim($pieces[1]) === '' ?: $in->addFeature(new Feature('cib', trim($pieces[1])));
@@ -1581,7 +1582,6 @@ while(($line = fgets($files['other'])) !== false) {
 
 	$container = false;
 	switch($pieces[1]) {
-		// TODO: finish stuff
 		case 'Mobo':
 			$in->addFeature(new Feature('type', 'motherboard'));
 			$container = true;
