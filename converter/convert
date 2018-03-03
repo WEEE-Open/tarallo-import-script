@@ -684,6 +684,12 @@ while(($line = fgets($files['case'])) !== false) {
 			$in->addFeature(new Feature('motherboard-form-factor', $f));
 			$needfixup = true;
 			break;
+		case 'BTX':
+			$f = 'btx';
+			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
+			$in->addFeature(new Feature('motherboard-form-factor', $f));
+			$needfixup = true;
+			break;
 		case 'Portatile':
 			$f = 'proprietary-laptop';
 			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
