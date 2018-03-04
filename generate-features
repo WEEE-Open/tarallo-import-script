@@ -3,7 +3,7 @@
 chdir(__DIR__);
 $data = file_get_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'database-data.sql');
 $lines = preg_split('/[\n\r]/', $data, -1, PREG_SPLIT_NO_EMPTY);
-$resultjs = '// BEGIN GENERATED CODE' . PHP_EOL;
+$resultjs = "\t// BEGIN GENERATED CODE" . PHP_EOL;
 $resultphp = "\t// BEGIN GENERATED CODE" . PHP_EOL . "\tconst features = [" . PHP_EOL;
 $resultlocalized = "\t// BEGIN GENERATED CODE" . PHP_EOL . "\tconst features = [" . PHP_EOL;
 $resultlocalized2 = '';
@@ -40,23 +40,23 @@ foreach($lines as $line) {
 
 			$features[$id] = [];
 
-			if($type === '2') {
-				$resultjs .= 'Features.list.set(\'' . $feature . '\', new Set({REPLACE' . $id . '}));' . PHP_EOL;
-			} else {
-				$resultjs .= 'Features.list.set(\'' . $feature . '\', null);' . PHP_EOL;
-			}
-
 			switch($type) {
 				case '0':
+					$resultjs .= "\tfeatureTypes.set('$feature', 's');" . PHP_EOL;
 					$resultphp .= "\t\t'$feature' => self::STRING," . PHP_EOL;
 					break;
 				case '1':
+					$resultjs .= "\tfeatureTypes.set('$feature', 'i');" . PHP_EOL;
 					$resultphp .= "\t\t'$feature' => self::INTEGER," . PHP_EOL;
 					break;
 				case '2':
+					$resultjs .= "\tfeatureTypes.set('$feature', 'e');" . PHP_EOL;
+					$resultjs .= "\tfeatureValues.set('$feature', {REPLACE$id});" . PHP_EOL;
+					$resultjs .= "\tfeatureValuesTranslated.set('$feature', {REPLACETRANSLATED$id});" . PHP_EOL;
 					$resultphp .= "\t\t'$feature' => [{REPLACE$id}]," . PHP_EOL;
 					break;
 				case '3':
+					$resultjs .= "\tfeatureTypes.set('$feature', 'd');" . PHP_EOL;
 					$resultphp .= "\t\t'$feature' => self::DOUBLE," . PHP_EOL;
 					break;
 			}
@@ -97,6 +97,7 @@ foreach($lines as $line) {
 			}
 
 			$resultlocalized2 .= "\t\t'$id/$value' => '$translation'," . PHP_EOL;
+			$featuresTranslated[$id][] = $translation;
 
 			echo "Value: $id:$value:$translation" . PHP_EOL;
 		} else {
@@ -113,12 +114,23 @@ foreach($features as $id => $values) {
 		$arrayphp .= "'$value' => true, ";
 	}
 	$arrayjs = substr($arrayjs, 0, strlen($arrayjs) - 2);
-	$arrayphp = substr($arrayphp, 0, strlen($arrayphp) - 2); // trailing commas are valid in PHP, but this looks nices
+	$arrayphp = substr($arrayphp, 0, strlen($arrayphp) - 2); // trailing commas are valid in PHP, but this looks nicer
 	$arrayjs .= ']';
 	$resultjs = str_replace('{REPLACE' . $id . '}', $arrayjs, $resultjs);
 	$resultphp = str_replace('{REPLACE' . $id . '}', $arrayphp, $resultphp);
 }
-$resultjs .= '// END GENERATED CODE';
+assert(isset($featuresTranslated));
+foreach($featuresTranslated as $id => $values) {
+	$arrayjs = '[';
+	foreach($values as $value) {
+		$arrayjs .= '\'' . $value . '\', ';
+	}
+	$arrayjs = substr($arrayjs, 0, strlen($arrayjs) - 2);
+	$arrayjs .= ']';
+	$resultjs = str_replace('{REPLACETRANSLATED' . $id . '}', $arrayjs, $resultjs);
+}
+
+$resultjs .= "\t// END GENERATED CODE";
 $resultphp .= "\t];" . PHP_EOL . "\t// END GENERATED CODE";
 
 
@@ -131,17 +143,18 @@ unset($resultlocalized2);
 //file_put_contents('features.generated.js', $resultjs);
 //echo 'Done. Run "cat features.generated.js >> tarallo-frontend/js/features.js" and manually merge the file'.PHP_EOL;
 
-$js = file_get_contents('tarallo-frontend' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'features.js');
+$file = 'tarallo-backend' . DIRECTORY_SEPARATOR . 'SSRv1' . DIRECTORY_SEPARATOR . 'static' . DIRECTORY_SEPARATOR . 'features.js';
+$js = file_get_contents($file);
 
-$piecesjs = explode('// BEGIN GENERATED CODE' . PHP_EOL, $js, 2);
+$piecesjs = explode("\t// BEGIN GENERATED CODE" . PHP_EOL, $js, 2);
 if(count($piecesjs) < 2) {
-	echo 'Cannot find // BEGIN GENERATED CODE (followed by a newline in current platform format, which may be the problem) in tarallo-frontend/js/features.js' . PHP_EOL;
+	echo "Cannot find // BEGIN GENERATED CODE (indented and followed by a newline in current platform format, which may be the problem) in $file" . PHP_EOL;
 	exit(1);
 }
 
-$piecesjs2 = explode('// END GENERATED CODE', $js, 2);
+$piecesjs2 = explode("\t// END GENERATED CODE", $js, 2);
 if(count($piecesjs2) < 2) {
-	echo 'Cannot find // END GENERATED CODE in tarallo-frontend/js/features.js' . PHP_EOL;
+	echo "Cannot find // END GENERATED CODE in $file" . PHP_EOL;
 	exit(1);
 }
 
@@ -173,10 +186,9 @@ if(count($pieceslocalized2) < 2) {
 	exit(1);
 }
 
-file_put_contents('tarallo-frontend' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'features.js',
-	$piecesjs[0] . $resultjs . $piecesjs2[1]);
+file_put_contents($file, $piecesjs[0] . $resultjs . $piecesjs2[1]);
 file_put_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Feature.php',
 	$piecesphp[0] . $resultphp . $piecesphp2[1]);
 file_put_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'SSRv1' . DIRECTORY_SEPARATOR . 'Localizer.php',
 	$pieceslocalized[0] . $resultlocalized . $pieceslocalized2[1]);
-echo 'Done. Check "tarallo-frontend/js/features.js", "tarallo-backend/src/Feature.php" and "tarallo-backend/SSRv1/Localizer.php" and commit changes' . PHP_EOL;
+echo "Done. Check '$file', 'tarallo-backend/src/Feature.php' and 'tarallo-backend/SSRv1/Localizer.php' and commit changes" . PHP_EOL;
