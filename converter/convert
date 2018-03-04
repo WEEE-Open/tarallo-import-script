@@ -1682,10 +1682,20 @@ $pdo->exec('USE ' . DBNAME);
 $pdo->exec(file_get_contents('database.sql'));
 $pdo->exec(file_get_contents('database-data.sql'));
 $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
-(\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', 1507496724, 1)');
+(\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', DEFAULT, 1)');
 $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
-(\'asd\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'asd\', 1507496724, 1)');
-// $pdo->exec(file_get_contents('database-procedures.sql')); // TODO: explode() this thing, replace $$ with ;
+(\'asd\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'asd\', DEFAULT, 1)');
+
+echo 'Importing stored procedures & triggers...'.PHP_EOL;
+$procedures = file_get_contents('database-procedures.sql');
+$procedures = str_replace(['DELIMITER $$', 'DELIMITER ;'], '', $procedures);
+$procedures = explode('END $$', $procedures);
+foreach($procedures as $procedure) {
+	if(trim($procedure) === '') {
+		continue;
+	}
+	$pdo->exec($procedure . "\nEND;");
+}
 
 echo 'Importing Item tree...' . PHP_EOL;
 try {
@@ -1698,7 +1708,5 @@ try {
 	$db->rollback();
 	throw $e;
 }
-// Doesn't work but import succeeds anyway
-//$db->modificationDAO()->modificationCommit();
 
 echo 'Done.' . PHP_EOL;
