@@ -334,9 +334,16 @@ function psupls(Item $in, $psustring, $line) {
 			$formfactor = 'cfx';
 			$powerconnector = 'c13';
 			break;
-		case 'CFX 24 + 6 (HP)':
+		case 'CFX 24 + 6 (HP)': // 2 black, 2 yellow, 1 purple, 1 blue
 			$mobopin = 'atx-24pin';
 			$cpupin = '6pin-hp';
+			$formfactor = 'cfx';
+			$powerconnector = 'c13';
+			break;
+			break;
+		case 'CFX 24 mini + 6 (HP brown)': // 2 black, 2 yellow, 2 brown. But I suspect it's the same as above...
+			$mobopin = 'atx-24pin-mini';
+			$cpupin = '6pin-hp-brown';
 			$formfactor = 'cfx';
 			$powerconnector = 'c13';
 			break;
@@ -687,6 +694,24 @@ while(($line = fgets($files['case'])) !== false) {
 			break;
 		case 'BTX':
 			$f = 'btx';
+			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
+			$in->addFeature(new Feature('motherboard-form-factor', $f));
+			$needfixup = true;
+			break;
+		case 'MicroBTX':
+			$f = 'microbtx';
+			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
+			$in->addFeature(new Feature('motherboard-form-factor', $f));
+			$needfixup = true;
+			break;
+		case 'NanoBTX':
+			$f = 'nanobtx';
+			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
+			$in->addFeature(new Feature('motherboard-form-factor', $f));
+			$needfixup = true;
+			break;
+		case 'PicoBTX':
+			$f = 'picobtx';
 			$mobo->addFeature(new Feature('motherboard-form-factor', $f));
 			$in->addFeature(new Feature('motherboard-form-factor', $f));
 			$needfixup = true;
