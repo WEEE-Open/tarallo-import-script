@@ -24,7 +24,13 @@ foreach($lines as $line) {
 		$block = 2;
 		continue;
 	}
-	if($block === 0) {
+	/** @noinspection SqlNoDataSourceInspection */
+	$wut = 'INSERT INTO `Prefixes`';
+	if(substr($line, 0, strlen($wut)) === $wut) {
+		$block = 3;
+		continue;
+	}
+	if($block === 0 || $block === 3) {
 		continue;
 	} else {
 		$boom = explode(',', $line);

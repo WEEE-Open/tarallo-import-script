@@ -503,7 +503,7 @@ while(($line = fgets($files['case'])) !== false) {
 	working($in, $pieces[9], $line);
 
 	$mobo = new Item('B' . ++$moboid);
-	// TODO: set RAM type and form factor (same as PSU form factor, which is also a TODO)
+	// TODO: set RAM type and form factor (or don't, we'll use Products later)
 	isduplicate($mobo->getCode(), $line);
 	$otherContainers[$mobo->getCode()] = $mobo;
 	$mobo->addFeature(new Feature('type', 'motherboard'));
@@ -602,6 +602,9 @@ while(($line = fgets($files['case'])) !== false) {
 						if($value === '6xSCA2') {
 							$mobo->addFeature(new Feature('scsi-sca2-ports-n', 6));
 							$decoded = true;
+						} else if($value === '2xSCA2') {
+							$mobo->addFeature(new Feature('scsi-sca2-ports-n', 2));
+							$decoded = true;
 						} else if($value === '2xDB68') {
 							$mobo->addFeature(new Feature('scsi-db68-ports-n', 2));
 							$decoded = true;
@@ -611,6 +614,9 @@ while(($line = fgets($files['case'])) !== false) {
 						if($value === '1+S-Video') {
 							$mobo->addFeature(new Feature('vga-ports-n', 1));
 							$mobo->addFeature(new Feature('s-video-ports-n', 1));
+							$decoded = true;
+						} else if($value === 'HDMI') {
+							$mobo->addFeature(new Feature('hdmi-ports-n', 1));
 							$decoded = true;
 						}
 						break;
@@ -833,6 +839,10 @@ while(($line = fgets($files['case'])) !== false) {
 					$cpu->addFeature(new Feature('cpu-socket', 'socket603'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket603'));
 					break;
+				case '604':
+					$cpu->addFeature(new Feature('cpu-socket', 'socket604'));
+					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket604'));
+					break;
 				case 'Soldered':
 					// TODO: replace this soldered-in-place item with Product
 					break;
@@ -908,8 +918,7 @@ while(($line = fgets($files['case'])) !== false) {
 		default:
 			/** @noinspection PhpStatementHasEmptyBodyInspection */
 			if(substr($pieces[33], 0, 2) !== 'SG') {
-				echo 'Warning: integrated graphics incompletely inventoried, value: ' . $pieces[33].PHP_EOL;
-				// TODO: turn into a stop()
+				stop('Integrated graphics incompletely inventoried, value: ' . $pieces[33], $line);
 			}
 	}
 	unset($cpu);
@@ -922,12 +931,54 @@ while(($line = fgets($files['case'])) !== false) {
 		}
 		unset($needfixup);
 	} else if(substr($psucode, 0, 4) === 'No, ') {
-		if($pieces[11] === '0MM621') {
-			$in->addFeature(new Feature('power-connector', 'da-2'));
-		} else if($pieces[25] === 'Portatile') {
+		$psupieces = explode(', ', $psucode);
+		if($psupieces[1] === 'Barrel') {
 			$in->addFeature(new Feature('power-connector', 'barrel'));
-		} /** @noinspection PhpStatementHasEmptyBodyInspection */ else {
-			// TODO: this
+			if(count($psupieces) > 2) {
+				if(count($psupieces) !== 4) {
+					stop("Wrong format for barrel in: $psucode", $line);
+				}
+				$v = (double) substr($psupieces[2], 0, -2);
+				$a = (double) substr($psupieces[3], 0, -2);
+				$in->addFeature(new Feature('psu-volt', $v));
+				$in->addFeature(new Feature('psu-ampere', $a));
+				unset($a);
+				unset($v);
+			}
+		} else if($psupieces[1] === 'DA-2') {
+			$in->addFeature(new Feature('power-connector', 'da-2'));
+		} else {
+			switch(trim($psupieces[1])) {
+				case 'ATX 24 + 4':
+					$mobopin = 'atx-24pin';
+					$cpupin = '4pin';
+					$psuformfactor = 'atx';
+					break;
+				case 'ATX 24 + 8':
+					$mobopin = 'atx-24pin';
+					$cpupin = '8pin';
+					$psuformfactor = 'atx';
+					break;
+				case 'CFX 24 + 4':
+					$mobopin = 'atx-24pin';
+					$cpupin = '4pin';
+					$psuformfactor = 'cfx';
+					break;
+				case 'LFX 20 + 4':
+					$mobopin = 'atx-20pin';
+					$cpupin = '4pin';
+					$psuformfactor = 'lfx';
+					break;
+				default:
+					stop('Uknown supposedly internal PSU type: ' . $psupieces[1], $line);
+			}
+
+			$mobo->addFeature(new Feature('psu-connector-cpu', $cpupin));
+			$mobo->addFeature(new Feature('psu-connector-motherboard', $mobopin));
+			$in->addFeature(new Feature('psu-form-factor', $psuformfactor));
+			unset($cpupin);
+			unset($mobopin);
+			unset($psuformfactor);
 		}
 	}
 	unset($psucode);
@@ -1645,7 +1696,32 @@ while(($line = fgets($files['other'])) !== false) {
 	}
 
 	trim($pieces[2]) === '' ?: $in->addFeature(new Feature('cib', trim($pieces[2])));
-	// TODO: parse stuff in column 3
+	switch(trim($pieces[3])) {
+		case 'ATX':
+			$in->addFeature(new Feature('motherboard-form-factor', 'atx'));
+			break;
+		case 'Socket 423':
+			$in->addFeature(new Feature('cpu-socket', 'socket423'));
+			break;
+		case 'Slot1':
+			$in->addFeature(new Feature('cpu-socket', 'slot1'));
+			break;
+		case 'Socket 3':
+			$in->addFeature(new Feature('cpu-socket', 'socket3'));
+			break;
+		case 'Socket 478':
+			$in->addFeature(new Feature('cpu-socket', 'socket478'));
+			break;
+		case 'Socket 370':
+			$in->addFeature(new Feature('cpu-socket', 'socket370'));
+			break;
+		case 'LGA775':
+			$in->addFeature(new Feature('cpu-socket', 'lga775'));
+			break;
+		case 'Socket A':
+			$in->addFeature(new Feature('cpu-socket', 'socket462a'));
+			break;
+	}
 	$pieces[4] === '' ?: $in->addFeature(new Feature('brand', $pieces[4]));
 	$pieces[5] === '' ?: $in->addFeature(new Feature('model', $pieces[5]));
 	working($in, $pieces[6], $line);
@@ -1713,6 +1789,13 @@ $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, 
 
 echo 'Importing stored procedures & triggers...'.PHP_EOL;
 $procedures = file_get_contents('database-procedures.sql');
+$procedures = explode("\n", $procedures);
+foreach($procedures as &$line) {
+	if(substr(ltrim($line), 0, 2) === '--') {
+		$line = '';
+	}
+}
+$procedures = implode("\n", $procedures);
 $procedures = str_replace(['DELIMITER $$', 'DELIMITER ;'], '', $procedures);
 $procedures = explode('END $$', $procedures);
 foreach($procedures as $procedure) {
