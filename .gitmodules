@@ -1,7 +1,3 @@
-[submodule "tarallo-frontend"]
-	path = tarallo-frontend
-	url = https://github.com/WEEE-Open/tarallo-frontend.git
-	branch = master
 [submodule "tarallo-backend"]
 	path = tarallo-backend
 	url = https://github.com/WEEE-Open/tarallo-backend.git
