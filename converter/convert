@@ -146,6 +146,7 @@ function placeinto(Item $item, $parent, $line, $container = false) {
 		case 'zonaground':
 		case 'groot':
 		case 'tavolo':
+		case 'rotonda':
 		case 'davanzale':
 		case 'armadiol':
 		case 'armadior':
@@ -464,13 +465,20 @@ foreach($files as $file => $useless) {
 	$files[$file] = $handle;
 }
 
+// Codes generation
 $cpuid = 0;
 $moboid = 0;
-$gpuid = 100;
 $netids = [];
 
+// Arrival date, day that the item was added to the inventory
+// All added at the end, since they go in the audit table
+$creation = [];
+
+// First line is a "super-header"
 $discard = fgets($files['case']);
 unset($discard);
+
+// Then there's the normal header
 $header = fgets($files['case']);
 $header = explode('|', $header);
 // Whatever, it's not really needed...
@@ -505,6 +513,7 @@ while(($line = fgets($files['case'])) !== false) {
 	$mobo = new Item('B' . ++$moboid);
 	// TODO: set RAM type and form factor (or don't, we'll use Products later)
 	isduplicate($mobo->getCode(), $line);
+	$creation[$mobo->getCode()] = $pieces[42];
 	$otherContainers[$mobo->getCode()] = $mobo;
 	$mobo->addFeature(new Feature('type', 'motherboard'));
 	$in->addContent($mobo);
@@ -782,6 +791,7 @@ while(($line = fgets($files['case'])) !== false) {
 		$otherContainers[$cpu->getCode()] = $cpu;
 		$cpu->addFeature(new Feature('type', 'cpu'));
 		$mobo->addContent($cpu);
+		$creation[$cpu->getCode()] = $pieces[42];
 		$counter++;
 
 		switch(trim($pieces[27])) {
@@ -1011,6 +1021,7 @@ while(($line = fgets($files['case'])) !== false) {
 		unset($pfcpieces);
 	}
 
+	$creation[$in->getCode()] = $pieces[42];
 	placeinto($in, $pieces[43], $line);
 	$in->addFeature(new Feature('arrival-batch', trim($pieces[44])));
 	own($in, trim($pieces[45]), $line);
@@ -1069,7 +1080,7 @@ while(($line = fgets($files['monitor'])) !== false) {
 	}
 	$pieces[14] === '' ?: $in->addFeature(new Feature('sn', trim($pieces[14])));
 	placeinto($in, $pieces[15], $line);
-	// TODO: handle "data di carico" (even though they're mostly random)
+	$creation[$in->getCode()] = $pieces[16];
 	if($pieces[17] === 'AreaIT') {
 		$pieces[17] = 'Area IT';
 	}
@@ -1115,6 +1126,7 @@ while(($line = fgets($files['ram'])) !== false) {
 	}
 	$pieces[8] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[8])));
 	placeinto($in, $pieces[9], $line);
+	$creation[$in->getCode()] = $pieces[10];
 	$pieces[11] === '' ?: own($in, trim($pieces[11]), $line);
 
 	$location = strtoupper(trim($pieces[9]));
@@ -1172,8 +1184,6 @@ while(($line = fgets($files['hdd'])) !== false) {
 		case 'SCSI DB68':
 			$in->addFeature(new Feature('scsi-db68-ports-n', 1));
 			$in->addFeature(new Feature('hdd-odd-form-factor', '3.5'));
-			array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
-					'wrong-location')) && $check++);
 			break;
 		case 'SCSI SCA2':
 			$in->addFeature(new Feature('scsi-sca2-ports-n', 1));
@@ -1258,6 +1268,7 @@ while(($line = fgets($files['hdd'])) !== false) {
 	}
 
 	$pieces[10] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[10])));
+	$creation[$in->getCode()] = $pieces[12];
 	$pieces[13] === '' ?: own($in, trim($pieces[13]), $line);
 	$counter++;
 }
@@ -1323,8 +1334,9 @@ while(($line = fgets($files['odd'])) !== false) {
 
 	$pieces[8] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[8])));
 	$pieces[9] === '' ?: colorify($in, $pieces[9], $line);
-	$pieces[12] === '' ?: own($in, trim($pieces[12]), $line);
 	placeinto($in, $pieces[10], $line);
+	$creation[$in->getCode()] = $pieces[11];
+	$pieces[12] === '' ?: own($in, trim($pieces[12]), $line);
 	$counter++;
 }
 $files['odd'] = $counter;
@@ -1380,6 +1392,7 @@ while(($line = fgets($files['input'])) !== false) {
 	$pieces[7] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[7])));
 	($pieces[8] === '' || $pieces[8] === '-') ?: $in->addFeature(new Feature('sn', $pieces[8]));
 	placeinto($in, $pieces[9], $line);
+	$creation[$in->getCode()] = $pieces[10];
 	$pieces[11] === '' ?: own($in, trim($pieces[11]), $line);
 
 	$missing = $pieces[9] === 'Perso' || $pieces[9] === 'Duplicato';
@@ -1517,6 +1530,12 @@ while(($line = fgets($files['cards'])) !== false) {
 		case 'Mini PCI':
 			$in->addFeature(new Feature('mini-pci-sockets-n', 1));
 			break;
+		case 'USB header':
+			$in->addFeature(new Feature('usb-header-n', 1));
+			break;
+		case 'Header interno':
+			$in->addFeature(new Feature('internal-header-n', 1));
+			break;
 		case 'Proprietario':
 		case '-':
 		case '':
@@ -1532,6 +1551,7 @@ while(($line = fgets($files['cards'])) !== false) {
 	($pieces[26] === '' || $pieces[26] === '-') ?: $in->addFeature(new Feature('sn', $pieces[26]));
 	$pieces[27] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[27])));
 	placeinto($in, $pieces[28], $line);
+	$creation[$in->getCode()] = $pieces[29];
 	own($in, trim($pieces[30]), $line);
 	$pieces[31] === "-\n" ?: colorify($in, $pieces[31], $line);
 
@@ -1635,6 +1655,7 @@ while(($line = fgets($files['fdd'])) !== false) {
 	working($in, $pieces[4], $line);
 	$pieces[5] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[5])));
 	placeinto($in, $pieces[6], $line);
+	$creation[$in->getCode()] = $pieces[7];
 	$pieces[8] === '' ?: own($in, trim($pieces[8]), $line);
 
 	$counter++;
@@ -1737,6 +1758,7 @@ while(($line = fgets($files['other'])) !== false) {
 	($pieces[9] === '' || $pieces[9] === '-') ?: $in->addFeature(new Feature('sn', $pieces[9]));
 	$pieces[10] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[10])));
 	placeinto($in, $pieces[11], $line, $container);
+	$creation[$in->getCode()] = $pieces[12];
 	$pieces[13] === '' ?: own($in, trim($pieces[13]), $line);
 
 	$counter++;
@@ -1759,6 +1781,17 @@ printf("Items that need manual adjustments: %d of %d (%-4.1f%%)\n", $check, $tot
 // Items are JSON encoded by the API, so this is quite legible:
 //echo json_encode($polito, JSON_PRETTY_PRINT);
 file_put_contents('../database.generated.json', json_encode($polito, JSON_PRETTY_PRINT));
+
+$tz = new DateTimeZone('Europe/Rome');
+foreach($creation as $item => $date) {
+	try {
+		$creation[$item] = new DateTime($date . ' 12:00:00', $tz);
+	} catch(Exception $e) {
+		echo $e->getCode() . ": $item";
+		exit(1);
+	}
+}
+unset($tz);
 
 // Stop here to see what has been parsed without importing into database
 // exit(0);
@@ -1813,10 +1846,20 @@ foreach($procedures as $procedure) {
 	$pdo->exec($procedure . "\nEND;");
 }
 
+$audit = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`) VALUES (?, \'C\', NULL, FROM_UNIXTIME(?))');
+
 echo 'Importing Item tree...' . PHP_EOL;
 try {
 	$db->beginTransaction();
 	$db->itemDAO()->addItem($polito);
+
+	echo 'Importing audit table...' . PHP_EOL;
+	$pdo->exec('TRUNCATE TABLE Audit;');
+	foreach($creation as $code => $datetime) {
+		/** @var DateTime $datetime */
+		$audit->execute([$code, $datetime->getTimestamp()]);
+	}
+
 	echo 'COMMIT!' . PHP_EOL;
 	$pdo->commit();
 } catch(Exception $e) {
