@@ -512,7 +512,15 @@ while(($line = fgets($files['case'])) !== false) {
 
 	trim($pieces[10]) === '' ?: $mobo->addFeature(new Feature('brand', trim($pieces[10])));
 	trim($pieces[11]) === '' ?: $mobo->addFeature(new Feature('model', trim($pieces[11])));
-	trim($pieces[12]) === '' ?: $mobo->addFeature(new Feature('sn', trim($pieces[12])));
+	$sn = trim($pieces[12]);
+	if($sn !== '') {
+		$sn = explode('/', $sn, 2);
+		$mobo->addFeature(new Feature('sn', $sn[0]));
+		if(count($sn) > 1) {
+			$in->addFeature(new Feature('sn', $sn[1]));
+		}
+	}
+	unset($sn);
 
 	trim($pieces[11]) === '' ?: $mobomodel = trim($pieces[11]);
 
