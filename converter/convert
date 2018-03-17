@@ -924,6 +924,7 @@ while(($line = fgets($files['case'])) !== false) {
 		case 'SG50':
 		case 'SG34':
 		case 'SG25':
+		case 'SG39':
 			$mobo->addFeature(new Feature('integrated-graphics-brand', trim($pieces[34])));
 			$mobo->addFeature(new Feature('integrated-graphics-model', trim($pieces[35])));
 			break;
