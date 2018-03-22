@@ -35,8 +35,6 @@ in `tarallo` and `tarallo_test` database
 
 ## Building stuff
 
-**Warning**: right now this is probably broken (will fix soon)
-
 Run `build.sh` outside Vagrant: it will create a new directory named `build` and place 
 there all the files that need to be deployed. It will also run Composer and Grunt, so 
 have them installed.
