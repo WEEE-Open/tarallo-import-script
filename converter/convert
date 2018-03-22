@@ -1501,15 +1501,15 @@ while(($line = fgets($files['cards'])) !== false) {
 			$in->addFeature(new Feature('composite-video-ports-n', (int) $pieces[14])) && $hasports = true;
 		} else if($pieces[14] === 'Grande') {
 			$in->addFeature(new Feature('s-video-7pin-ports-n', (int) $pieces[14])) && $hasports = true;
+		} else if($pieces[14] === '1+2DP') {
+			// lacchezzo estremo
+			$in->addFeature(new Feature('s-video-ports-n', (int) $pieces[14])) && $hasports = true;
+			$in->addFeature(new Feature('displayport-ports-n', 2)) && $hasports = true;
+		} else if($pieces[14] === '2DP') {
+			$in->addFeature(new Feature('displayport-ports-n', 2)) && $hasports = true;
 		} else {
 			stop('Lolwut s-video?', $line);
 		}
-	}
-
-	// lacchezzo estremo
-	if(trim(strtoupper($pieces[28])) === 'EMILIA') {
-		echo 'Patching EMILIA graphics card features...' . PHP_EOL;
-		$in->addFeature(new Feature('displayport-ports-n', 2));
 	}
 
 	switch($pieces[21]) {
@@ -1788,7 +1788,7 @@ foreach($creation as $item => $date) {
 	try {
 		$creation[$item] = new DateTime($date . ' 12:00:00', $tz);
 	} catch(Exception $e) {
-		echo $e->getCode() . ": $item";
+		echo $e->getMessage() . ": $item";
 		exit(1);
 	}
 }
