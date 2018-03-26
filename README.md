@@ -7,7 +7,9 @@ Refer to that repo for documentation.
 
 ## Running stuff
 
-Everything is already configured in Vagrantfile and install.sh, just run `vagrant up`
+Install Vagrant and Ansible (it's required to provision the VM), then run:
+    vagrant plugin install vagrant-vbguest
+    vagrant up
 and you will get:
 
 * T.A.R.A.L.L.O. instance accessible at `127.0.0.1:8080`
@@ -32,6 +34,9 @@ Some Vagrant provision scripts are made to be runnable on their own, the most im
 in `tarallo` and `tarallo_test` database
 * `vagrant provision --provision-with db-procedures` to recreate databases and import
 `database-data.sql`, only in `tarallo` database
+
+The `vagrant-vbguest` is required because the default CentOS 7 image lacks VirtualBox
+additions, required for folder sharing.
 
 ## Building stuff
 

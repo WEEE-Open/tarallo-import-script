@@ -1,0 +1,92 @@
+---
+- name: FAI COSE
+  hosts: all
+  become: true
+  become_user: root
+
+  tasks:
+  - name: Create a directory for no reason
+    file: path=/home/vagrant/.phpstorm_helpers state=directory mode=0777
+
+  - name: Enable MariaDB repo
+    yum_repository:
+      name: mariadb
+      description: MariaDB
+      baseurl: http://yum.mariadb.org/10.2/centos7-amd64
+      gpgkey: https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+      gpgcheck: yes
+      enabled: yes
+
+  # https://github.com/iuscommunity/automation-examples/blob/ansible/enable-ius.yml
+  - set_fact:
+      ius_distribution_abbrev: "{{ (ansible_distribution == 'CentOS') | ternary('centos', 'rhel') }}"
+
+  # TODO: re-enable. Also, understand if it's downloading the file every single time.
+  #- name: Enable IUS repo
+  #  yum:
+  #    name: "https://{{ ius_distribution_abbrev }}{{ ansible_distribution_major_version }}.iuscommunity.org/ius-release.rpm"
+  #    state: present
+
+  - name: Install MariaDB 10.2 packages
+    yum: name={{ item }} state=installed
+    with_items:
+      - MariaDB-server
+      - MariaDB-client
+
+  - name: Enable and start MariaDB
+    service:
+      name: mariadb
+      enabled: yes
+      state: started
+
+  - name: Install PHP 7.0
+    yum: name={{ item }} state=installed
+    with_items:
+      - php70u-common
+      - php70u-fpm
+      - php70u-json
+      - php70u-mysqlnd
+      - php70u-opcache
+      - php70u-pdo
+
+  - name: Enable and start PHP-FPM
+    service:
+      name: php-fpm
+      enabled: yes
+      state: started
+
+    # Not really sure about mcrypt. unzip is required for downloading Adminer, actually.
+  - name: Install PHP developement dependencies
+    yum: name={{ item }} state=installed
+    with_items:
+      - php70u-pecl-xdebug
+      - php70u-mbstring
+      - php70u-dom
+      - php70u-mcrypt
+      - php70u-intl
+      - unzip
+
+  # https://stackoverflow.com/a/40656937
+  - name: Enable XDebug
+    lineinfile:
+      dest: /etc/php.d/15-xdebug.ini
+      regexp: "{{ item.line_to_match }}"
+      line: "{{ item.line_to_configure }}"
+    with_items:
+      - { line_to_match: "zend_extension", line_to_configure: "zend_extension=xdebug.so" }
+      - { line_to_match: "xdebug.remote_enable", line_to_configure: "xdebug.remote_enable = 1" }
+      - { line_to_match: "xdebug.remote_connect_back", line_to_configure: "xdebug.remote_connect_back = 1" }
+
+  - name: Install Composer
+    script: composer.sh
+    args:
+      creates: /usr/local/bin/composer
+
+  - name: Install nginx
+    yum: name=nginx state=installed
+
+  - name: Enable and start nginx
+    service:
+      name: nginx
+      enabled: yes
+      state: started

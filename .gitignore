@@ -1,6 +1,7 @@
 .idea/
 .vagrant/
 build/
+provision/playbook.retry
 *.log
 *.generated.js*
 converter/*.ods
