@@ -17,18 +17,18 @@ server {
 	sendfile off; # broken in virtualbox
 
 	location ~ \.(css|js)$ {
-		# There has to be an easier way.
-        root /var/www/html/server/SSRv1/static;
-    }
+			root /var/www/html/server/SSRv1/static;
+	}
 
 	location / {
-		include fastcgi_params;
-		fastcgi_param PATH_INFO $uri;
+			include fastcgi_params;
+			try_files $uri /index.php;
 
-		fastcgi_param SCRIPT_FILENAME $document_root/index.php;
-		fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+			fastcgi_param PATH_INFO $uri;
+			fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+			fastcgi_pass 127.0.0.1:9000;
 	}
-}
+
 
 EOF
 
