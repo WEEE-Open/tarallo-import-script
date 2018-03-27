@@ -3,6 +3,57 @@
   hosts: all
   become: true
   become_user: root
+  vars:
+    mariadb_root_password: root
+    mariadb_user_name: tarallo
+    mariadb_user_password: thisisnottheproductionpassword
+    document_root: /var/www/html
+
+    nginx_yum_repo_enabled: false
+    nginx_remove_default_vhost: true
+    nginx_sendfile: "off"
+    nginx_vhosts:
+    # sendfile is broken in VirtualBox
+    - listen: "80 default_server"
+      server_name: "_"
+      index: "index.php"
+      root: "{{ document_root }}/server"
+      template: "{{ nginx_vhost_template }}"
+      filename: "tarallo-server.conf"
+      state: "present"
+      extra_parameters: |
+        location ~ \.(css|js)$ {
+          root {{ document_root }}/server/SSRv1/static;
+        }
+
+        location / {
+          include fastcgi_params;
+          try_files $uri /index.php =404;
+
+          fastcgi_param PATH_INFO $uri;
+          fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          fastcgi_pass 127.0.0.1:9000;
+        }
+    - listen: "81 default_server"
+      server_name: "_"
+      root: "{{ document_root }}/admin"
+      template: "{{ nginx_vhost_template }}"
+      filename: "tarallo-admin.conf"
+      state: "present"
+      extra_parameters: |
+        location / {
+          autoindex on;
+          try_files $uri $uri/ =404;
+        }
+
+        location ~ \.php$ {
+          include fastcgi_params;
+          fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          fastcgi_pass 127.0.0.1:9000;
+        }
+
+  roles:
+    - { role: geerlingguy.nginx }
 
   tasks:
   - name: Create a directory for no reason
@@ -39,6 +90,30 @@
       enabled: yes
       state: started
 
+  - name: Adds Python-MySQL to set MariaDB configuration
+    yum: name=MySQL-python state=present
+
+  - name: Set MariaDB root password
+    mysql_user: login_user=root login_password="{{ mariadb_root_password }}" user=root password="{{ mariadb_root_password }}" state=present check_implicit_admin=yes
+
+  - name: Remove useless MariaDB root login
+    mysql_user: login_user=root login_password="{{ mariadb_root_password }}" user=root host="{{ ansible_fqdn }}" state=absent check_implicit_admin=yes
+
+  - name: Set MariaDB root password from localhost
+    mysql_user: login_user=root login_password="{{ mariadb_root_password }}" user=root password="{{ mariadb_root_password }}" host="localhost" check_implicit_admin=yes
+
+  - name: Set MariaDB root password from ::1
+    mysql_user: login_user=root login_password="{{ mariadb_root_password }}" user=root password="{{ mariadb_root_password }}" host="::1" check_implicit_admin=yes
+
+  - name: Set MariaDB root password from 127.0.0.1
+    mysql_user: login_user=root login_password="{{ mariadb_root_password }}" user=root password="{{ mariadb_root_password }}" host="127.0.0.1" check_implicit_admin=yes
+
+  - name: Deletes anonymous MariaDB user
+    mysql_user: login_user=root login_password="{{ mariadb_root_password }}" user="" host_all=yes state=absent
+
+  - name: Removes MariaDB test database
+    mysql_db: login_user=root login_password="{{ mariadb_root_password }}" db=test state=absent
+
   - name: Install PHP 7.0
     yum: name={{ item }} state=installed
     with_items:
@@ -55,7 +130,7 @@
       enabled: yes
       state: started
 
-    # Not really sure about mcrypt. unzip is required for downloading Adminer, actually.
+    # Not really sure about mcrypt and unzip
   - name: Install PHP developement dependencies
     yum: name={{ item }} state=installed
     with_items:
@@ -82,11 +157,34 @@
     args:
       creates: /usr/local/bin/composer
 
-  - name: Install nginx
-    yum: name=nginx state=installed
+  - name: Install dependencies via Composer
+    become: false
+    composer:
+      command: install
+      optimize_autoloader: no
+      no_dev: no
+      working_dir: "{{ document_root }}/server"
 
-  - name: Enable and start nginx
-    service:
-      name: nginx
-      enabled: yes
-      state: started
+  #- name: Install nginx
+  #  yum: name=nginx state=installed
+
+  #- name: Enable and start nginx
+  #  service:
+  #    name: nginx
+  #    enabled: yes
+  #    state: started
+
+  - name: Create Adminer directory
+    file: path="{{ document_root }}/admin" state=directory mode=0775
+
+  - name: Download Adminer
+    get_url:
+      url: https://github.com/vrana/adminer/releases/download/v4.6.1/adminer-4.6.1-mysql-en.php
+      dest: "{{ document_root }}/admin/adminer.php"
+      mode: 0444
+
+  - name: REALLY remove the broken (!?) default example nginx conf
+    file: path="/etc/nginx/conf.d/example.com.conf" state=absent
+
+  - name: Disable (set to permissive, actually) SELinux BECAUSE VIRTUALBOX, THAT'S WHY
+    selinux: state=permissive policy=targeted
