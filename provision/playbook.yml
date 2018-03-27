@@ -5,8 +5,8 @@
   become_user: root
   vars:
     mariadb_root_password: root
-    mariadb_user_name: tarallo
-    mariadb_user_password: thisisnottheproductionpassword
+    database_username: tarallo
+    database_password: thisisnottheproductionpassword
     document_root: /var/www/html
 
     nginx_yum_repo_enabled: false
@@ -188,3 +188,102 @@
 
   - name: Disable (set to permissive, actually) SELinux BECAUSE VIRTUALBOX, THAT'S WHY
     selinux: state=permissive policy=targeted
+
+  - name: Drop databases (because importing tables is not really idempotent)
+    mysql_db:
+      name: "{{ item }}"
+      login_user: root
+      login_password: "{{ mariadb_root_password }}"
+      state: absent
+    with_items:
+      - tarallo
+      - tarallo_test
+
+  - name: Create databases
+    mysql_db:
+      name: "{{ item }}"
+      encoding: utf8mb4
+      collation: utf8mb4_unicode_ci
+      login_user: root
+      login_password: "{{ mariadb_root_password }}"
+      state: present
+    with_items:
+      - tarallo
+      - tarallo_test
+
+  - name: Import tables
+    mysql_db:
+      name: "{{ item }}"
+      state: import
+      login_user: root
+      login_password: "{{ mariadb_root_password }}"
+      target: "{{ document_root }}/server/database.sql"
+    with_items:
+      - tarallo
+      - tarallo_test
+
+  - name: Import default data
+    mysql_db:
+      name: "{{ item }}"
+      state: import
+      login_user: root
+      login_password: "{{ mariadb_root_password }}"
+      target: "{{ document_root }}/server/database-data.sql"
+    with_items:
+      - tarallo
+      - tarallo_test
+
+  - name: Import procedures
+    mysql_db:
+      name: "{{ item }}"
+      state: import
+      login_user: root
+      login_password: "{{ mariadb_root_password }}"
+      target: "{{ document_root }}/server/database-procedures.sql"
+    with_items:
+      - tarallo
+      - tarallo_test
+
+  - name: Import sample data
+    mysql_db:
+      name: tarallo
+      state: import
+      login_user: root
+      login_password: "{{ mariadb_root_password }}"
+      target: "/data/sample-data.sql"
+
+  - name: Enable remote connections to MariaDB
+    template:
+      src: enable-remote-connection.conf.j2
+      dest: /etc/my.cnf.d/enable-remote-connection.conf
+
+  - name: Enable remote MariaDB root login
+    mysql_user:
+      login_user: root
+      login_password: "{{ mariadb_root_password }}"
+      user: root
+      password: "{{ mariadb_root_password }}"
+      host: "%"
+      priv: "*.*:ALL,GRANT"
+
+  - name: Create MariaDB user
+    mysql_user:
+      login_user: root
+      login_password: "{{ mariadb_root_password }}"
+      user: "{{ database_username }}"
+      password: "{{ database_password }}"
+      host: "localhost"
+      priv: "tarallo.*:ALL"
+
+  # This is not really the best way, I guess
+  - name: Restart MariaDB
+    service:
+      name: mysqld
+      state: restarted
+
+  - name: Enabling tarallo to use database
+    template:
+      src: db.php.j2
+      dest: "{{ document_root }}/server/db.php"
+      owner: vagrant
+      group: vagrant
