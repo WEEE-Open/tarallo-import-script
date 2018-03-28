@@ -53,6 +53,7 @@
         }
 
   roles:
+    - { role: goozbach.EPEL }
     - { role: geerlingguy.nginx }
 
   tasks:

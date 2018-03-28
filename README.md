@@ -9,6 +9,7 @@ Refer to that repo for documentation.
 
 Install Vagrant and Ansible (it's required to provision the VM), then run:
 
+    ansible-galaxy install goozbach.EPEL
     ansible-galaxy install geerlingguy.nginx
     vagrant plugin install vagrant-vbguest
     vagrant up
