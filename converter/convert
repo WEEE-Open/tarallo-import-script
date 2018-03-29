@@ -131,9 +131,11 @@ $chernobyl->addContent($armadiol)->addContent($armadior)->addContent($armadios)-
 $armadior->addContent($scatolaRAM);
 $tavolo->addContent($sottoaltavolo);
 $otherContainers = []; // Cases contain every kind of item, motherboards "contain" RAM sticks and CPUs
+$lastLocations = []; // Last location where item was seen, which sometimes is the first one (to reconstruct the "movements" sheet/audit table)
 
 function placeinto(Item $item, $parent, $line, $container = false, $fixup = false) {
 	global $otherContainers;
+	global $lastLocations;
 	if($container) {
 		if(isset($container[$item->getCode()])) {
 			stop('Duplicate code', $line);
@@ -145,6 +147,7 @@ function placeinto(Item $item, $parent, $line, $container = false, $fixup = fals
 		case 'zonablu':
 		case 'zonarossa':
 		case 'zonaground':
+		case 'magazzino':
 		case 'groot':
 		case 'tavolo':
 		case 'rotonda':
@@ -159,6 +162,7 @@ function placeinto(Item $item, $parent, $line, $container = false, $fixup = fals
 			global $$where;
 			/** @noinspection PhpUndefinedMethodInspection */
 			$$where->addContent($item);
+			$lastLocations[$item->getCode()] = $$where->getCode();
 
 			return;
 		case 'zonamrf':
@@ -166,7 +170,7 @@ function placeinto(Item $item, $parent, $line, $container = false, $fixup = fals
 			global $mrf;
 			/** @noinspection PhpUndefinedMethodInspection */
 			$mrf->addContent($item);
-
+			$lastLocations[$item->getCode()] = $mrf->getCode();
 			return;
 		case 'perso':
 		case 'persa':
@@ -174,28 +178,28 @@ function placeinto(Item $item, $parent, $line, $container = false, $fixup = fals
 			global $chernobyl;
 			/** @noinspection PhpUndefinedMethodInspection */
 			$chernobyl->addContent($item);
-
+			$lastLocations[$item->getCode()] = $chernobyl->getCode();
 			return;
 	}
 	if(strstr($where, 'scatolaramrotte') > -1) {
 		global $scatolaRAM;
 		/** @noinspection PhpUndefinedMethodInspection */
 		$scatolaRAM->addContent($item);
-
+		$lastLocations[$item->getCode()] = $scatolaRAM->getCode();
 		return;
 	}
 	if(strstr($where, 'armadiol') > -1) {
 		global $armadiol;
 		/** @noinspection PhpUndefinedMethodInspection */
 		$armadiol->addContent($item);
-
+		$lastLocations[$item->getCode()] = $armadiol->getCode();
 		return;
 	}
 	if(strstr($where, 'armadiod') > -1) {
 		global $armadiod;
 		/** @noinspection PhpUndefinedMethodInspection */
 		$armadiod->addContent($item);
-
+		$lastLocations[$item->getCode()] = $armadiod->getCode();
 		return;
 	}
 	// TODO: handle this correctly
@@ -203,7 +207,7 @@ function placeinto(Item $item, $parent, $line, $container = false, $fixup = fals
 		global $armadiol;
 		/** @noinspection PhpUndefinedMethodInspection */
 		$armadiol->addContent($item);
-
+		$lastLocations[$item->getCode()] = $armadiol->getCode();
 		return;
 	}
 	$parent = trim($parent);
@@ -216,13 +220,14 @@ function placeinto(Item $item, $parent, $line, $container = false, $fixup = fals
 				if($maybeType !== null && $maybeType->value === 'motherboard') {
 					/** @noinspection PhpUndefinedMethodInspection */
 					$maybeMobo->addContent($item);
-					echo 'FIXUP!';
+					$lastLocations[$item->getCode()] = $maybeMobo->getCode();
 					return;
 				}
 			}
 		} else {
 			/** @noinspection PhpUndefinedMethodInspection */
 			$otherContainers[$parent]->addContent($item);
+			$lastLocations[$item->getCode()] = $parent;
 			return;
 		}
 	}
@@ -258,6 +263,11 @@ function colorify(Item $item, $color, $line) {
 			return;
 		case 'rosso':
 			$item->addFeature(new Feature('color', 'red'));
+
+			return;
+		case 'verde acqua':
+			// Not exactly, but close enough
+			$item->addFeature(new Feature('color', 'lightblue'));
 
 			return;
 		case 'ingiallito':
@@ -523,6 +533,7 @@ while(($line = fgets($files['case'])) !== false) {
 	working($in, $pieces[9], $line);
 
 	$mobo = new Item('B' . ++$moboid);
+	$lastLocations[$mobo->getCode()] = $in->getCode();
 	// TODO: set RAM type and form factor (or don't, we'll use Products later)
 	isduplicate($mobo->getCode(), $line);
 	$creation[$mobo->getCode()] = $pieces[42];
@@ -803,6 +814,7 @@ while(($line = fgets($files['case'])) !== false) {
 		$otherContainers[$cpu->getCode()] = $cpu;
 		$cpu->addFeature(new Feature('type', 'cpu'));
 		$mobo->addContent($cpu);
+		$lastLocations[$cpu->getCode()] = $mobo->getCode();
 		$creation[$cpu->getCode()] = $pieces[42];
 		$counter++;
 
@@ -1634,6 +1646,7 @@ while(($line = fgets($files['psu'])) !== false) {
 	($pieces[11] === '' || $pieces[11] === '-') ?: $in->addFeature(new Feature('sn', $pieces[11]));
 	$pieces[12] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[12])));
 	placeinto($in, $pieces[13], $line);
+	$creation[$in->getCode()] = $pieces[14];
 	$pieces[15] === '' ?: own($in, trim($pieces[15]), $line);
 
 	if($missing) {
@@ -1718,6 +1731,10 @@ while(($line = fgets($files['other'])) !== false) {
 		case 'Stampante':
 			$in->addFeature(new Feature('type', 'printer'));
 			break;
+		case 'Modem':
+		case 'Router':
+			$in->addFeature(new Feature('type', 'modem-router'));
+			break;
 		case 'Scanner':
 			$in->addFeature(new Feature('type', 'scanner'));
 			break;
@@ -1798,15 +1815,49 @@ printf("Items that need manual adjustments: %d of %d (%-4.1f%%)\n", $check, $tot
 file_put_contents('../database.generated.json', json_encode($polito, JSON_PRETTY_PRINT));
 
 $tz = new DateTimeZone('Europe/Rome');
-foreach($creation as $item => $date) {
+$movements = [];
+
+$move = fopen('..' . DIRECTORY_SEPARATOR . 'converter' . DIRECTORY_SEPARATOR . 'move.csv', "r");
+$header = explode('|', fgets($move));
+while(($line = fgets($move)) !== false) {
+	$pieces = nuke($line, count($header));
+	$code = (string) trim($pieces[0]);
+	$from = $pieces[1];
+	$to = $pieces[2];
+	$date = $pieces[3];
+
+	if(!isset($movements[$code])) {
+		$movements[$code] = [];
+		$movements[$code][] = $from;
+		$movements[$code][] = isset($creation[$from]) ? (new DateTime($creation[$from] . ' 12:00:00', $tz))->getTimestamp() : null;
+	}
+	$movements[$code][] = $to;
+	$movements[$code][] = (new DateTime($date . ' 12:00:00', $tz))->getTimestamp();
+}
+
+foreach($creation as $code => $date) {
+	$code = (string) trim($code);
+	if($code === 'A39') {
+		echo 'ciao';
+	}
 	try {
-		$creation[$item] = new DateTime($date . ' 12:00:00', $tz);
+		$date = (new DateTime($date . ' 12:00:00', $tz))->getTimestamp();
+		if(!isset($movements[$code])) {
+			// TODO: if is a RAM, change first location (from PC to mobo)
+			$movements[$code] = [];
+			$movements[$code][] = $lastLocations[$code];
+			$movements[$code][] = $date;
+		} else {
+			$movements[$code][1] = $date;
+		}
 	} catch(Exception $e) {
-		echo $e->getMessage() . ": $item";
+		echo $e->getMessage() . ": $code";
 		exit(1);
 	}
 }
 unset($tz);
+
+file_put_contents('../movements.generated.json', json_encode($movements, JSON_PRETTY_PRINT));
 
 // Stop here to see what has been parsed without importing into database
 // exit(0);
@@ -1861,6 +1912,7 @@ foreach($procedures as $procedure) {
 	$pdo->exec($procedure . ";");
 }
 
+// TODO: 'c' with parent, also 'm'
 $audit = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`) VALUES (?, \'C\', NULL, FROM_UNIXTIME(?))');
 
 echo 'Importing Item tree...' . PHP_EOL;
@@ -1870,9 +1922,9 @@ try {
 
 	echo 'Importing audit table...' . PHP_EOL;
 	$pdo->exec('TRUNCATE TABLE Audit;');
-	foreach($creation as $code => $datetime) {
+	foreach($creation as $code => $ts) {
 		/** @var DateTime $datetime */
-		$audit->execute([$code, $datetime->getTimestamp()]);
+		$audit->execute([$code, $ts]);
 	}
 
 	echo 'COMMIT!' . PHP_EOL;
