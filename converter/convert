@@ -109,6 +109,7 @@ function own(
 }
 
 $polito = (new Item('Polito'))->addFeature(new Feature('type', 'location'));
+$magazzino = (new Item('Magazzino'))->addFeature(new Feature('type', 'location'));
 $chernobyl = (new Item('Chernobyl'))->addFeature(new Feature('type', 'location'));
 $mrf = (new Item('Mirafiori'))->addFeature(new Feature('type', 'location'));
 $armadiol = (new Item('ArmadioL'))->addFeature(new Feature('type', 'location'));
@@ -125,13 +126,13 @@ $zonarossa = (new Item('ZonaRossa'))->addFeature(new Feature('type', 'location')
 $zonaground = (new Item('ZonaGround'))->addFeature(new Feature('type', 'location'));
 $davanzale = (new Item('Windowsill'))->addFeature(new Feature('type', 'location'));
 
-$polito->addContent($chernobyl)->addContent($mrf);
+$polito->addContent($chernobyl)->addContent($mrf)->addContent($magazzino);
 $chernobyl->addContent($armadiol)->addContent($armadior)->addContent($armadios)->addContent($armadiod)->addContent($tavolo)->addContent($groot)->addContent($rotonda)->addContent($zonablu)->addContent($zonarossa)->addContent($zonaground)->addContent($davanzale);
 $armadior->addContent($scatolaRAM);
 $tavolo->addContent($sottoaltavolo);
 $otherContainers = []; // Cases contain every kind of item, motherboards "contain" RAM sticks and CPUs
 
-function placeinto(Item $item, $parent, $line, $container = false) {
+function placeinto(Item $item, $parent, $line, $container = false, $fixup = false) {
 	global $otherContainers;
 	if($container) {
 		if(isset($container[$item->getCode()])) {
@@ -207,10 +208,14 @@ function placeinto(Item $item, $parent, $line, $container = false) {
 	}
 	$parent = trim($parent);
 	if(isset($otherContainers[$parent])) {
-		/** @noinspection PhpUndefinedMethodInspection */
-		$otherContainers[$parent]->addContent($item);
-
-		return;
+		if($fixup) {
+			/** @noinspection PhpUndefinedMethodInspection */
+			$otherContainers[$parent]->getContents();
+		} else {
+			/** @noinspection PhpUndefinedMethodInspection */
+			$otherContainers[$parent]->addContent($item);
+			return;
+		}
 	}
 	stop('Unknown location: ' . $parent, $line);
 
@@ -813,7 +818,7 @@ while(($line = fgets($files['case'])) !== false) {
 		$missing = false;
 		$notes = '';
 		if(trim($pieces[29]) !== '') {
-			$freq = (int) (((double) trim($pieces[29])) * 1000000);
+			$freq = (int) (((double) trim($pieces[29])) * 1000000000);
 			$cpu->addFeature(new Feature('frequency-hertz', $freq));
 		} else {
 			$missing = true;
@@ -1100,7 +1105,9 @@ while(($line = fgets($files['ram'])) !== false) {
 	isduplicate($in->getCode(), $line);
 	$in->addFeature(new Feature('type', 'ram'));
 	$pieces[1] === '' ?: $in->addFeature(new Feature('ram-type', strtolower(trim($pieces[1]))));
-	$pieces[2] === '' ?: $in->addFeature(new Feature('ram-form-factor', strtolower(trim($pieces[2]))));
+	$ff = strtolower(trim($pieces[2]));
+	$pieces[2] === '' ?: $in->addFeature(new Feature('ram-form-factor', $ff === 'sdr' ? 'simm' : $ff));
+	unset($ff);
 	$pieces[3] === '' ?: $in->addFeature(new Feature('frequency-hertz', $pieces[3] * 1000000));
 	$pieces[4] === '' ?: $in->addFeature(new Feature('capacity-byte', $pieces[4] * 1048576));
 	working($in, $pieces[5], $line);
@@ -1839,12 +1846,12 @@ foreach($procedures as &$line) {
 }
 $procedures = implode("\n", $procedures);
 $procedures = str_replace(['DELIMITER $$', 'DELIMITER ;'], '', $procedures);
-$procedures = explode('END $$', $procedures);
+$procedures = explode('$$', $procedures);
 foreach($procedures as $procedure) {
 	if(trim($procedure) === '') {
 		continue;
 	}
-	$pdo->exec($procedure . "\nEND;");
+	$pdo->exec($procedure . ";");
 }
 
 $audit = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`) VALUES (?, \'C\', NULL, FROM_UNIXTIME(?))');
