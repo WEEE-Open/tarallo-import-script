@@ -210,7 +210,16 @@ function placeinto(Item $item, $parent, $line, $container = false, $fixup = fals
 	if(isset($otherContainers[$parent])) {
 		if($fixup) {
 			/** @noinspection PhpUndefinedMethodInspection */
-			$otherContainers[$parent]->getContents();
+			foreach($otherContainers[$parent]->getContents() as $maybeMobo) {
+				/** @noinspection PhpUndefinedMethodInspection */
+				$maybeType = $maybeMobo->getFeature('type');
+				if($maybeType !== null && $maybeType->value === 'motherboard') {
+					/** @noinspection PhpUndefinedMethodInspection */
+					$maybeMobo->addContent($item);
+					echo 'FIXUP!';
+					return;
+				}
+			}
 		} else {
 			/** @noinspection PhpUndefinedMethodInspection */
 			$otherContainers[$parent]->addContent($item);
@@ -218,8 +227,6 @@ function placeinto(Item $item, $parent, $line, $container = false, $fixup = fals
 		}
 	}
 	stop('Unknown location: ' . $parent, $line);
-
-	return null;
 }
 
 function colorify(Item $item, $color, $line) {
@@ -1133,7 +1140,7 @@ while(($line = fgets($files['ram'])) !== false) {
 		$check++;
 	}
 	$pieces[8] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[8])));
-	placeinto($in, $pieces[9], $line);
+	placeinto($in, $pieces[9], $line, false, true);
 	$creation[$in->getCode()] = $pieces[10];
 	$pieces[11] === '' ?: own($in, trim($pieces[11]), $line);
 
