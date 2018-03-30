@@ -1839,13 +1839,30 @@ foreach($creation as $code => $date) {
 	$code = (string) trim($code);
 	try {
 		$date = (new DateTime($date . ' 12:00:00', $tz))->getTimestamp();
-		if(!isset($movements[$code])) {
-			// TODO: if is a RAM, change first location (from PC to mobo)
+		if(isset($movements[$code])) {
+			$movements[$code][1] = $date;
+		} else {
 			$movements[$code] = [];
 			$movements[$code][] = $lastLocations[$code];
 			$movements[$code][] = $date;
-		} else {
-			$movements[$code][1] = $date;
+		}
+
+		if($code{0} === 'R' && strlen($code) < 5) {
+			for($i = 0; $i < count($movements[$code]); $i += 2) {
+				$parent = $movements[$code][$i];
+				if(isset($otherContainers[$parent])) {
+					foreach($otherContainers[$parent]->getContents() as $maybeMobo) {
+						/** @noinspection PhpUndefinedMethodInspection */
+						$maybeType = $maybeMobo->getFeature('type');
+						if($maybeType !== null && $maybeType->value === 'motherboard') {
+							/** @noinspection PhpUndefinedMethodInspection */
+							$parent = $maybeMobo->getCode();
+							break;
+						}
+					}
+				}
+				$movements[$code][$i] = $parent;
+			}
 		}
 	} catch(Exception $e) {
 		echo $e->getMessage() . ": $code";
