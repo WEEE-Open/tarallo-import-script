@@ -1889,14 +1889,6 @@ echo 'Rebuilding database...' . PHP_EOL;
 // Apparently, the mysql.proc table sometimes crashes randomly and procedures cannot be added anymore.
 // Why that happens, and why is uses MyISAM instead of InnoDB, is still a mystery
 $pdo->exec('USE ' . DBNAME);
-$pdo->exec('DROP FUNCTION IF EXISTS GenerateCode;
-DROP PROCEDURE IF EXISTS SetUser;
-DROP FUNCTION IF EXISTS GetParent;
-DROP TRIGGER IF EXISTS SearchResultsDelete;
-DROP TRIGGER IF EXISTS SearchResultsUpdate;
-DROP TRIGGER IF EXISTS SearchResultsInsert;
-DROP TRIGGER IF EXISTS SetRealSearchResultTimestampBecauseMySQLCant;
-DROP PROCEDURE IF EXISTS RefreshSearch;');
 
 $pdo->exec('DROP DATABASE IF EXISTS ' . DBNAME);
 $pdo->exec('CREATE DATABASE ' . DBNAME . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
@@ -1926,8 +1918,8 @@ foreach($procedures as $procedure) {
 	$pdo->exec($procedure . ";");
 }
 
-// TODO: 'c' with parent, also 'm'
-$audit = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`) VALUES (?, \'C\', NULL, FROM_UNIXTIME(?))');
+$audit1 = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`) VALUES (?, \'C\', ?, FROM_UNIXTIME(?))');
+$audit2 = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`) VALUES (?, \'M\', ?, FROM_UNIXTIME(?))');
 
 echo 'Importing Item tree...' . PHP_EOL;
 try {
@@ -1936,9 +1928,24 @@ try {
 
 	echo 'Importing audit table...' . PHP_EOL;
 	$pdo->exec('TRUNCATE TABLE Audit;');
-	foreach($creation as $code => $ts) {
-		/** @var DateTime $datetime */
-		$audit->execute([$code, $ts]);
+	foreach($movements as $code => $sequence) {
+		$first = true;
+		for($i = 0; $i < count($sequence); $i += 2) {
+			if($first) {
+				$audit1->execute([$code, $sequence[$i], $sequence[$i + 1]]);
+				$first = false;
+			} else {
+				do {
+					try {
+						$audit2->execute([$code, $sequence[$i], $sequence[$i + 1]++]);
+						$success = true;
+					} catch(PDOException $e) {
+						$success = false;
+						echo "Resolving time collision for $code" . PHP_EOL;
+					}
+				} while(!$success);
+			}
+		}
 	}
 
 	echo 'COMMIT!' . PHP_EOL;
