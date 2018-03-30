@@ -1896,7 +1896,7 @@ $pdo->exec('USE ' . DBNAME);
 $pdo->exec(file_get_contents('database.sql'));
 $pdo->exec(file_get_contents('database-data.sql'));
 $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
-(\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', DEFAULT, 1)');
+(\'IMPORT\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'iR3YvecST9zvuSwyPohH4O8L4mWpj7Kk\', DEFAULT, 0)');
 $pdo->exec('INSERT INTO `User` (`Name`, `Password`, `Session`, `SessionExpiry`, `Enabled`) VALUES
 (\'asd\', \'$2y$10$nrGjrh07hFNjzRDxCWrtfuo.Nug9.AdjcaYQuUMPQhVKRRrxz1Hsm\',	\'asd\', DEFAULT, 1)');
 
