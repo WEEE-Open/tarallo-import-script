@@ -1837,9 +1837,6 @@ while(($line = fgets($move)) !== false) {
 
 foreach($creation as $code => $date) {
 	$code = (string) trim($code);
-	if($code === 'A39') {
-		echo 'ciao';
-	}
 	try {
 		$date = (new DateTime($date . ' 12:00:00', $tz))->getTimestamp();
 		if(!isset($movements[$code])) {
