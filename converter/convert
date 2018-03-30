@@ -1918,8 +1918,8 @@ foreach($procedures as $procedure) {
 	$pdo->exec($procedure . ";");
 }
 
-$audit1 = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`) VALUES (?, \'C\', ?, FROM_UNIXTIME(?))');
-$audit2 = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`) VALUES (?, \'M\', ?, FROM_UNIXTIME(?))');
+$audit1 = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`, `User`) VALUES (?, \'C\', NULL, FROM_UNIXTIME(?), \'IMPORT\')');
+$audit2 = $pdo->prepare('INSERT INTO Audit(`Code`, `Change`, `Other`, `Time`, `User`) VALUES (?, \'M\', ?, FROM_UNIXTIME(?), \'IMPORT\')');
 
 echo 'Importing Item tree...' . PHP_EOL;
 try {
@@ -1932,7 +1932,8 @@ try {
 		$first = true;
 		for($i = 0; $i < count($sequence); $i += 2) {
 			if($first) {
-				$audit1->execute([$code, $sequence[$i], $sequence[$i + 1]]);
+				$audit1->execute([$code, $sequence[$i + 1]]);
+				$audit2->execute([$code, $sequence[$i], $sequence[$i + 1]]);
 				$first = false;
 			} else {
 				do {
