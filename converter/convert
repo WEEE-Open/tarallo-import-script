@@ -885,9 +885,6 @@ while(($line = fgets($files['case'])) !== false) {
 					$cpu->addFeature(new Feature('cpu-socket', 'socket604'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'socket604'));
 					break;
-				case 'Soldered':
-					// TODO: replace this soldered-in-place item with Product
-					break;
 				case 'LGA1155':
 					$cpu->addFeature(new Feature('cpu-socket', 'lga1155'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'lga1155'));
@@ -1951,6 +1948,9 @@ try {
 
 	echo 'COMMIT!' . PHP_EOL;
 	$pdo->commit();
+
+	echo 'Optimizing...' . PHP_EOL;
+	$pdo->exec('OPTIMIZE TABLE `Audit`, `Feature`, `FeatureEnum`, `Item`, `ItemFeature`, `Prefixes`, `Search`, `SearchResult`, `Tree`, `User`;');
 } catch(Exception $e) {
 	echo 'ROLLBACK!' . PHP_EOL;
 	$db->rollback();
