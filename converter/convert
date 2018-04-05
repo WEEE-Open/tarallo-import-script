@@ -1176,16 +1176,17 @@ while(($line = fgets($files['hdd'])) !== false) {
 	$in->addFeature(new Feature('type', 'hdd'));
 
 	if(trim($pieces[0]) === 'HDD2') {
+		// TODO: remove once fixed
 		$in->addFeature(new Feature('check', 'wrong-data'));
 		$check++;
 	}
 
-	if(substr($pieces[11], 0, 5) === 'Perso') {
+	if(substr($pieces[13], 0, 5) === 'Perso') {
 		placeinto($in, 'Chernobyl', $line);
 		$in->addFeature(new Feature('check', 'wrong-location'));
 		$check++;
 	} else {
-		placeinto($in, $pieces[11], $line);
+		placeinto($in, $pieces[13], $line);
 	}
 
 	switch(trim($pieces[1])) {
@@ -1216,54 +1217,42 @@ while(($line = fgets($files['hdd'])) !== false) {
 		default:
 			stop('Unknown connector type', $line);
 	}
-	if(trim($pieces[2]) !== '') {
-		$pieces[2] = trim($pieces[2]);
-		$subpieces = explode(' ', $pieces[2], 2);
-		assert(count($subpieces) > 0);
 
-		if($subpieces[0] === 'WesternDigital') {
-			$subpieces[0] = 'Western Digital';
-		}
-
-		if(count($subpieces) === 1) {
-			$in->addFeature(new Feature('brand', $subpieces[0]));
-		} else {
-			$in->addFeature(new Feature('brand', $subpieces[0]));
-			$in->addFeature(new Feature('model', $subpieces[1]));
-		}
-	}
-
-	if($pieces[3] === '') {
-		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
-				'missing-data')) && $check++);
-	} else {
-		$thing = trim($pieces[3]);
-		if(strpos($thing, ',') > -1) {
-			$thing = str_replace(',', '.', $thing);
-			$size = (int) ((double) $thing * 1000000000.0);
-		} else {
-			$size = trim($pieces[3]) * 1000000000;
-		}
-		$in->addFeature(new Feature('capacity-decibyte', $size));
-	}
-
-	$pieces[4] === '' ?: $in->addFeature(new Feature('spin-rate-rpm', (int) $pieces[4]));
+	trim($pieces[2]) === '' ?: $in->addFeature(new Feature('brand', trim($pieces[2])));
+	trim($pieces[3]) === '' ?: $in->addFeature(new Feature('family', trim($pieces[3])));
+	trim($pieces[4]) === '' ?: $in->addFeature(new Feature('model', trim($pieces[4])));
 
 	if($pieces[5] === '') {
 		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
 				'missing-data')) && $check++);
 	} else {
-		$in->addFeature(new Feature('sn', $pieces[5]));
+		$thing = trim($pieces[5]);
+		if(strpos($thing, ',') > -1) {
+			$thing = str_replace(',', '.', $thing);
+			$size = (int) ((double) $thing * 1000000000.0);
+		} else {
+			$size = (int) (trim($pieces[5]) * 1000000000);
+		}
+		$in->addFeature(new Feature('capacity-decibyte', $size));
 	}
 
-	working($in, $pieces[6], $line);
+	$pieces[6] === '' ?: $in->addFeature(new Feature('spin-rate-rpm', (int) $pieces[6]));
 
-	if($pieces[7] !== '' && $pieces[7] !== 'no') {
+	if($pieces[7] === '') {
+		array_key_exists('check', $in->getFeatures()) ?: ($in->addFeature(new Feature('check',
+				'missing-data')) && $check++);
+	} else {
+		$in->addFeature(new Feature('sn', $pieces[7]));
+	}
+
+	working($in, $pieces[8], $line);
+
+	if($pieces[9] !== '' && $pieces[9] !== 'no') {
 		$in->addFeature(new Feature('data-erased', 'yes'));
 	}
 
-	if($pieces[8] !== '') {
-		switch(trim($pieces[8])) {
+	if($pieces[10] !== '') {
+		switch(trim($pieces[10])) {
 			case 'ok':
 				$in->addFeature(new Feature('surface-scan', 'pass'));
 				break;
@@ -1275,8 +1264,8 @@ while(($line = fgets($files['hdd'])) !== false) {
 		}
 	}
 
-	if($pieces[9] !== '') {
-		switch(trim($pieces[9])) {
+	if($pieces[11] !== '') {
+		switch(trim($pieces[11])) {
 			case 'ok':
 				$in->addFeature(new Feature('smart-data', 'ok'));
 				break;
@@ -1291,9 +1280,9 @@ while(($line = fgets($files['hdd'])) !== false) {
 		}
 	}
 
-	$pieces[10] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[10])));
-	$creation[$in->getCode()] = $pieces[12];
-	$pieces[13] === '' ?: own($in, trim($pieces[13]), $line);
+	$pieces[12] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[12])));
+	$creation[$in->getCode()] = $pieces[14];
+	$pieces[15] === '' ?: own($in, trim($pieces[15]), $line);
 	$counter++;
 }
 $files['hdd'] = $counter;
