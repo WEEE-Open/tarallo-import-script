@@ -142,16 +142,12 @@
       - php70u-intl
       - unzip
 
-  # https://stackoverflow.com/a/40656937
   - name: Enable XDebug
-    lineinfile:
-      dest: /etc/php.d/15-xdebug.ini
-      regexp: "{{ item.line_to_match }}"
-      line: "{{ item.line_to_configure }}"
-    with_items:
-      - { line_to_match: "zend_extension", line_to_configure: "zend_extension=xdebug.so" }
-      - { line_to_match: "xdebug.remote_enable", line_to_configure: "xdebug.remote_enable = 1" }
-      - { line_to_match: "xdebug.remote_connect_back", line_to_configure: "xdebug.remote_connect_back = 1" }
+    template:
+      src: 15-xdebug.ini.j2
+      dest: "/etc/php.d/15-xdebug.ini"
+      owner: root
+      group: root
 
   - name: Install Composer
     script: composer.sh
