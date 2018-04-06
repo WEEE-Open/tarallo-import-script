@@ -20,7 +20,7 @@ fi
 mkdir "$BUILD"
 
 echo "Building server..."
-FILES=( "$BACKEND/*.php" "$BACKEND/composer.*" )
+FILES=( "$BACKEND/index.php" "$BACKEND/composer.*" )
 cp ${FILES[@]} "$BUILD"
 cp -r "$BACKEND/src" "$BUILD"
 cp -r "$BACKEND/APIv1" "$BUILD"
