@@ -1159,12 +1159,6 @@ while(($line = fgets($files['hdd'])) !== false) {
 	isduplicate($in->getCode(), $line);
 	$in->addFeature(new Feature('type', 'hdd'));
 
-	if(trim($pieces[0]) === 'HDD2') {
-		// TODO: remove once fixed
-		$in->addFeature(new Feature('check', 'wrong-data'));
-		$check++;
-	}
-
 	if(substr($pieces[13], 0, 5) === 'Perso') {
 		placeinto($in, 'Chernobyl', $line);
 		$in->addFeature(new Feature('check', 'wrong-location'));
