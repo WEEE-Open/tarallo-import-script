@@ -1286,18 +1286,18 @@ while(($line = fgets($files['odd'])) !== false) {
 			break;
 		case 'SATA (slim)':
 			$in->addFeature(new Feature('sata-ports-n', 1));
-			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
+			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-9.5mm'));
 			break;
 		case 'JAE (slim)':
 			$in->addFeature(new Feature('jae-ports-n', 1));
-			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
+			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-9.5mm'));
 			break;
 		case 'SCSI (slim)':
 			$in->addFeature(new Feature('scsi-sca2-ports-n', 1));
-			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
+			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-9.5mm'));
 			break;
 		case 'Proprietario':
-			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-standard'));
+			$in->addFeature(new Feature('hdd-odd-form-factor', 'laptop-odd-9.5mm'));
 			break;
 		default:
 			stop('Unknown connector type', $line);
