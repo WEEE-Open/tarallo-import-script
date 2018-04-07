@@ -1127,33 +1127,17 @@ while(($line = fgets($files['ram'])) !== false) {
 	$pieces[3] === '' ?: $in->addFeature(new Feature('frequency-hertz', $pieces[3] * 1000000));
 	$pieces[4] === '' ?: $in->addFeature(new Feature('capacity-byte', $pieces[4] * 1048576));
 	working($in, $pieces[5], $line);
-	if(trim($pieces[6]) !== '') {
-		$pieces[6] = trim($pieces[6]);
-		$subpieces = explode(' ', $pieces[6], 2);
-		assert(count($subpieces) > 0);
-		if(count($subpieces) === 1) {
-			if(substr($subpieces[0], 0, 5) === 'VS512') {
-				$in->addFeature(new Feature('model', $subpieces[0]));
-			} else {
-				$in->addFeature(new Feature('brand', $subpieces[0]));
-			}
-		} else {
-			$in->addFeature(new Feature('brand', $subpieces[0]));
-			$in->addFeature(new Feature('model', $subpieces[1]));
-		}
-	}
-	$pieces[7] = trim($pieces[7]);
-	$pieces[7] === '' || $pieces[7] === '-' ?: $in->addFeature(new Feature('sn', trim($pieces[7])));
-	if(mb_substr($pieces[7], 0, 3) === '...' || mb_substr($pieces[7], 0, 1) === '…') {
-		$in->addFeature(new Feature('check', 'missing-data'));
-		$check++;
-	}
-	$pieces[8] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[8])));
-	placeinto($in, $pieces[9], $line, false, true);
-	$creation[$in->getCode()] = $pieces[10];
-	$pieces[11] === '' ?: own($in, trim($pieces[11]), $line);
+	trim($pieces[6]) === '' ?: $in->addFeature(new Feature('brand', trim($pieces[6])));
+	trim($pieces[7]) === '' ?: $in->addFeature(new Feature('family', trim($pieces[7])));
+	trim($pieces[8]) === '' ?: $in->addFeature(new Feature('model', trim($pieces[8])));
+	$pieces[9] = trim($pieces[9]);
+	$pieces[9] === '' || $pieces[9] === '-' ?: $in->addFeature(new Feature('sn', trim($pieces[9])));
+	$pieces[10] === '' ?: $in->addFeature(new Feature('notes', trim($pieces[10])));
+	placeinto($in, $pieces[11], $line, false, true);
+	$creation[$in->getCode()] = $pieces[12];
+	$pieces[13] === '' ?: own($in, trim($pieces[13]), $line);
 
-	$location = strtoupper(trim($pieces[9]));
+	$location = strtoupper(trim($pieces[11]));
 	if($location === 'EMILIA' || $location === 'ROSETTA' || $location === 'ROSITA' || $location === '40') {
 		$in->addFeature(new Feature('ram-ecc', 'yes'));
 	} else {
