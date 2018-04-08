@@ -536,7 +536,7 @@ while(($line = fgets($files['case'])) !== false) {
 	$lastLocations[$mobo->getCode()] = $in->getCode();
 	// TODO: set RAM type and form factor (or don't, we'll use Products later)
 	isduplicate($mobo->getCode(), $line);
-	$creation[$mobo->getCode()] = $pieces[42];
+	$creation[$mobo->getCode()] = $pieces[43];
 	$otherContainers[$mobo->getCode()] = $mobo;
 	$mobo->addFeature(new Feature('type', 'motherboard'));
 	$in->addContent($mobo);
@@ -815,8 +815,11 @@ while(($line = fgets($files['case'])) !== false) {
 		$cpu->addFeature(new Feature('type', 'cpu'));
 		$mobo->addContent($cpu);
 		$lastLocations[$cpu->getCode()] = $mobo->getCode();
-		$creation[$cpu->getCode()] = $pieces[42];
+		$creation[$cpu->getCode()] = $pieces[43];
 		$counter++;
+
+		$missing = false;
+		$notes = '';
 
 		switch(trim($pieces[27])) {
 			case 'Intel':
@@ -833,18 +836,22 @@ while(($line = fgets($files['case'])) !== false) {
 				$cpu->addFeature(new Feature('brand', trim($pieces[27])));
 		}
 		trim($pieces[28]) === '' ?: $cpu->addFeature(new Feature('model', trim($pieces[28])));
+		if(trim($pieces[29]) === '') {
+			$missing = true;
+			$notes .= ' CPUID brand, model, family (variant)?';
+		} else {
+			$cpu->addFeature(new Feature('variant', trim($pieces[29])));
+		}
 
-		$missing = false;
-		$notes = '';
-		if(trim($pieces[29]) !== '') {
-			$freq = (int) (((double) trim($pieces[29])) * 1000000000);
+		if(trim($pieces[30]) !== '') {
+			$freq = (int) (((double) trim($pieces[30])) * 1000000000);
 			$cpu->addFeature(new Feature('frequency-hertz', $freq));
 		} else {
 			$missing = true;
-			$notes .= 'Frequenza?';
+			$notes .= ' Frequenza?';
 		}
-		if(trim($pieces[30]) !== '') {
-			switch(trim($pieces[30])) {
+		if(trim($pieces[31]) !== '') {
+			switch(trim($pieces[31])) {
 				case 'LGA775':
 					$cpu->addFeature(new Feature('cpu-socket', 'lga775'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'lga775'));
@@ -914,18 +921,20 @@ while(($line = fgets($files['case'])) !== false) {
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'slot1'));
 					break;
 				default:
-					stop('Unknown socket: ' . trim($pieces[30]), $line);
+					stop('Unknown socket: ' . trim($pieces[31]), $line);
 			}
 		} else {
 			$missing = true;
-			$notes .= 'Socket?';
+			$notes .= ' Socket?';
 		}
 		if($missing) {
 			$cpu->addFeature(new Feature('check', 'missing-data'))->addFeature(new Feature('notes', $notes));
 			$check++;
 		}
-		working($cpu, $pieces[31], $line);
-		$notes = trim($pieces[39]);
+		unset($notes);
+
+		working($cpu, $pieces[32], $line);
+		$notes = trim($pieces[40]);
 		if($notes !== '') {
 			if(substr($notes, 0, 12) === 'CPU 32 bit. ') {
 				$cpu->addFeature(new Feature('isa', 'x86-32'));
@@ -936,34 +945,34 @@ while(($line = fgets($files['case'])) !== false) {
 				}
 			}
 		}
-		unset($notes);
+		unset($actualnotes);
 	}
 
-	switch($pieces[33]) {
+	switch($pieces[34]) {
 		case 'Integrata (mobo)':
 		case 'SG30': // little exception for one of the few PCs with integrated and discrete graphics. BTW, the discrete one is completely broken.
 		case 'SG50':
 		case 'SG34':
 		case 'SG25':
 		case 'SG39':
-			$mobo->addFeature(new Feature('integrated-graphics-brand', trim($pieces[34])));
-			$mobo->addFeature(new Feature('integrated-graphics-model', trim($pieces[35])));
+			$mobo->addFeature(new Feature('integrated-graphics-brand', trim($pieces[35])));
+			$mobo->addFeature(new Feature('integrated-graphics-model', trim($pieces[36])));
 			break;
 		case 'Integrata (CPU)':
-			$cpu->addFeature(new Feature('integrated-graphics-brand', trim($pieces[34])));
-			$cpu->addFeature(new Feature('integrated-graphics-model', trim($pieces[35])));
+			$cpu->addFeature(new Feature('integrated-graphics-brand', trim($pieces[35])));
+			$cpu->addFeature(new Feature('integrated-graphics-model', trim($pieces[36])));
 			break;
 		case '':
 			break;
 		default:
 			/** @noinspection PhpStatementHasEmptyBodyInspection */
-			if(substr($pieces[33], 0, 2) !== 'SG') {
-				stop('Integrated graphics incompletely inventoried, value: ' . $pieces[33], $line);
+			if(substr($pieces[34], 0, 2) !== 'SG') {
+				stop('Integrated graphics incompletely inventoried, value: ' . $pieces[34], $line);
 			}
 	}
 	unset($cpu);
 
-	$psucode = trim($pieces[38]);
+	$psucode = trim($pieces[39]);
 	if(substr($psucode, 0, 1) === 'A') {
 		$psufixupconnectors[$psucode] = $mobo;
 		if($needfixup) {
@@ -1023,7 +1032,7 @@ while(($line = fgets($files['case'])) !== false) {
 	}
 	unset($psucode);
 
-	$notes = trim($pieces[39]);
+	$notes = trim($pieces[40]);
 	if($notes !== '') {
 		if(substr($notes, 0, 12) === 'CPU 32 bit. ') {
 			$in->addFeature(new Feature('notes', substr($notes, 12)));
@@ -1033,8 +1042,8 @@ while(($line = fgets($files['case'])) !== false) {
 	}
 	unset($notes);
 
-	if(trim($pieces[40]) !== '') {
-		$pfcpieces = explode('W, PFC', trim($pieces[40]), 2);
+	if(trim($pieces[41]) !== '') {
+		$pfcpieces = explode('W, PFC', trim($pieces[41]), 2);
 		if(count($pfcpieces) !== 2) {
 			stop('Value doesn\'t explode properly: ' . $pieces[41], $line);
 		}
@@ -1043,14 +1052,15 @@ while(($line = fgets($files['case'])) !== false) {
 		unset($pfcpieces);
 	}
 
-	$creation[$in->getCode()] = $pieces[42];
-	placeinto($in, $pieces[43], $line);
-	$in->addFeature(new Feature('arrival-batch', trim($pieces[44])));
-	own($in, trim($pieces[45]), $line);
-	if(trim($pieces[41]) === 'Si' && !array_key_exists('restrictions', $in->getFeatures())) {
+	$creation[$in->getCode()] = $pieces[43];
+	placeinto($in, $pieces[44], $line);
+	$in->addFeature(new Feature('arrival-batch', trim($pieces[45])));
+	own($in, trim($pieces[46]), $line);
+	// Needs to be here, own() may place restrictions
+	if(trim($pieces[42]) === 'Si' && !array_key_exists('restrictions', $in->getFeatures())) {
 		$in->addFeature(new Feature('restrictions', 'ready'));
 	}
-	trim($pieces[46]) === '' ?: $in->addFeature(new Feature('software', trim($pieces[46])));
+	trim($pieces[47]) === '' ?: $in->addFeature(new Feature('software', trim($pieces[47])));
 
 	if(!array_key_exists('restrictions', $in->getFeatures())) {
 		switch($in->getCode()) {
