@@ -920,6 +920,10 @@ while(($line = fgets($files['case'])) !== false) {
 					$cpu->addFeature(new Feature('cpu-socket', 'slot1'));
 					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'slot1'));
 					break;
+				case 'Super 7':
+					$cpu->addFeature(new Feature('cpu-socket', 'super7'));
+					$i === 0 && $mobo->addFeature(new Feature('cpu-socket', 'super7'));
+					break;
 				default:
 					stop('Unknown socket: ' . trim($pieces[31]), $line);
 			}
