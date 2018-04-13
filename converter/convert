@@ -1617,8 +1617,14 @@ while(($line = fgets($files['psu'])) !== false) {
 		}
 	}
 
-	$pieces[7] === '' ?: $in->addFeature(new Feature('brand', $pieces[7]));
-	$pieces[8] === '' ?: $in->addFeature(new Feature('brand-reseller', $pieces[8]));
+	if($pieces[8] === '') {
+		// No OEM = brand is also manufacturer
+		$pieces[7] === '' ?: $in->addFeature(new Feature('brand', $pieces[7]));
+	} else {
+		// OEM = set it as brand-manufacturer
+		$pieces[7] === '' ?: $in->addFeature(new Feature('brand', $pieces[8]));
+		$pieces[8] === '' ?: $in->addFeature(new Feature('brand-manufacturer', $pieces[8]));
+	}
 	$pieces[9] === '' ?: $in->addFeature(new Feature('model', $pieces[9]));
 	working($in, $pieces[10], $line);
 	($pieces[11] === '' || $pieces[11] === '-') ?: $in->addFeature(new Feature('sn', $pieces[11]));
