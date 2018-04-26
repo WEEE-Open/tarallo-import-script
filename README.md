@@ -53,7 +53,7 @@ These are PHP scripts which can be run directly or by using `php script-name`.
 ### Feature list generation
 
 `generate-features` reads the feature list from `tarallo-backend/database-data.sql`,
-converts it to JS code and places it into `tarallo-backend/src/Database/Feature.php`
+converts it to PHP data structures and places it into `tarallo-backend/src/Database/Feature.php`
 and some other files (`generate-features` tells you which ones when it's finished).
 
 Modified files should be manually reviewed and committed.
