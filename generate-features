@@ -5,6 +5,7 @@ $data = file_get_contents('tarallo-backend' . DIRECTORY_SEPARATOR . 'database-da
 $lines = preg_split('/[\n\r]/', $data, -1, PREG_SPLIT_NO_EMPTY);
 //$resultjs = "\t// BEGIN GENERATED CODE" . PHP_EOL;
 $resultphp = "\t// BEGIN GENERATED CODE" . PHP_EOL . "\tconst features = [" . PHP_EOL;
+$resultphp2 = "\tconst groups = [" . PHP_EOL;
 $resultlocalized = "\t// BEGIN GENERATED CODE" . PHP_EOL . "\tconst features = [" . PHP_EOL;
 $resultlocalized2 = '';
 
@@ -42,7 +43,8 @@ foreach($lines as $line) {
 		}
 		if($block === 1) {
 			$feature = $id = substr($boom[0], 3, strlen($boom[0]) - 4);
-			$type = substr($boom[1], 1, 1);
+			$group = substr($boom[1], 2, strlen($boom[1]) - 3);
+			$type = substr($boom[2], 1, 1);
 
 			$features[$id] = [];
 
@@ -66,9 +68,10 @@ foreach($lines as $line) {
 					$resultphp .= "\t\t'$feature' => self::DOUBLE," . PHP_EOL;
 					break;
 			}
+			$resultphp2 .= "\t\t'$feature' => self::GROUP_$group," . PHP_EOL;
 
 			// Last piece has less fragments since it ends with ; instead of ,
-			$thePiece = isset($boom[2]) ? $boom[2]: $boom[1];
+			$thePiece = isset($boom[3]) ? $boom[3]: $boom[2];
 			$translationPieces = explode('--', $thePiece);
 			if(count($translationPieces) >= 2) {
 				$translation = trim($translationPieces[1]);
@@ -79,7 +82,7 @@ foreach($lines as $line) {
 
 			$resultlocalized .= "\t\t'$feature' => '$translation'," . PHP_EOL;
 
-			echo "Feature: $feature:$type:$translation" . PHP_EOL;
+			echo "Feature: $group->$feature:$type:$translation" . PHP_EOL;
 		} else if($block === 2) {
 			$id = substr($boom[0], 3, strlen($boom[0]) - 4);
 
@@ -151,6 +154,7 @@ foreach($featuresTranslated as $id => $values) {
 $resultlocalized2 = implode(PHP_EOL,array_unique(explode(PHP_EOL, $resultlocalized2)));
 
 //$resultjs .= "\t// END GENERATED CODE";
+$resultphp .= "\t];" . PHP_EOL . $resultphp2;
 $resultphp .= "\t];" . PHP_EOL . "\t// END GENERATED CODE";
 
 $resultlocalized .= "\t];" . PHP_EOL;
