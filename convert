@@ -1,7 +1,8 @@
 #!/usr/bin/php
 <?php
 chdir(__DIR__);
-if(!chdir('../tarallo-backend')) {
+// Depends on where you place this file, adjust accordingly
+if(!chdir('../tarallo')) {
 	echo 'Cannot change directory' . PHP_EOL;
 };
 /** @noinspection PhpIncludeInspection */
